@@ -3,7 +3,7 @@
 
 #### 实现机制
 1. 读取每个文件的前100(可定义)个字符
-2. 尝试使用5种编码对字符进行decode ***utf_8,utf_16,gb18030,gb2312,big5*** 
+2. 尝试使用5种编码对字符进行decode ```utf_8```,```utf_16```,```gb18030```,```gb2312```,```big5```
 3. 将每一组decode的结果对中文字符串和常用中文字进行正则匹配,有匹配结果的表明符合编码要求
 
 
@@ -15,7 +15,8 @@
 #### 使用范例:
 ./dist/chinese_charset_detect -i tests
 
-结果:
+测试结果:
+```
 文件名: tests/.DS_Store, 编码: unknow
 文件名: tests/fixtures/test4.txt, 编码: gb18030
 文件名: tests/fixtures/1045.txt, 编码: gb18030
@@ -26,5 +27,4 @@
 文件名: tests/fixtures/18.txt, 编码: utf_8
 总文件数: 8
 总耗时长: 0.5920612812042236
-
-
+```
