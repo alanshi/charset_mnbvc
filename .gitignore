@@ -1,0 +1,5 @@
+build
+*.spec
+venv
+.DS_Store
+.idea/
