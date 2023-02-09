@@ -11,6 +11,8 @@
 pip install charset-mnbvc
 ```
 
+#### charset-mnbvc pypi url:
+https://pypi.org/project/charset-mnbvc/
 
 ##### 根据文件夹获取所有文件编码
 ```
