@@ -3,17 +3,18 @@ import sys
 import getopt
 from charset_mnbvc import api
 
+OPT_MSG = "chinese_charset_detect.py -i <inputDirectory> inputDirectory为需要检测的目录"
 
 def main(argv):
     ifolder_path = ""
     try:
         opts, args = getopt.getopt(argv, "hi:o:", ["ifolder_path="])
     except getopt.GetoptError:
-        print('test.py -i <inputDirectory>')
+        print(OPT_MSG)
         sys.exit(2)
     for opt, arg in opts:
         if opt == '-h':
-            print('chinese_charset_detect.py -i <inputDirectory> inputDirectory为需要检测的目录')
+            print()
             sys.exit()
         elif opt in ("-i", "--ifolder_path"):
          ifolder_path = arg
@@ -35,5 +36,5 @@ if __name__ == "__main__":
     try:
         main(sys.argv[1:])
     except Exception as e:
-        print('chinese_charset_detect.py -i <inputDirectory> inputDirectory为需要检测的目录')
+        print(OPT_MSG)
         sys.exit(2)

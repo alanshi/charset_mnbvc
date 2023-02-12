@@ -1,6 +1,8 @@
 import os
 import re
 
+from charset_normalizer import from_bytes
+
 from .constant import (
     REGEX_FEATURE_ALL,
     CHUNK_SIZE,
@@ -18,6 +20,7 @@ def from_dir(folder_path):
         results.append(
             (file_path, coding_name)
         )
+
     return file_count, results
 
 
@@ -39,6 +42,7 @@ def scandir(folder_path, ext=".txt"):
 
 
 def get_cn_charset(file_path):
+    final_encodings = []
     try:
         with open(file_path, "rb") as fp:
             data = fp.read(CHUNK_SIZE)
@@ -58,9 +62,14 @@ def get_cn_charset(file_path):
             ]
 
             # returns the match condition
-            if final_encodings:
-                return final_encodings
+            if not final_encodings:
+                # try to use charset_normalizer if the normal decoding does not work
+                ret = from_bytes(data,chunk_size=CHUNK_SIZE, cp_exclusion=ENCODINGS)
+                if ret.best():
+                    final_encodings = [ret.best().encoding]
+                else:
+                    final_encodings = ["unkonw"]
+
     except Exception as e:
         print(e)
-        return None
-    return None
+    return final_encodings
