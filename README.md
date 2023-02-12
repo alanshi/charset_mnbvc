@@ -43,20 +43,36 @@ print(f"文件名: {file_path}, 编码: {coding_name}")
 python chinese_charset_detect.py -i tests
 ```
 
-#### 测试结果:
+测试环境说明（开发测试用机):
+* MacBook Air Apple M2, 内存:16 GB, 硬盘:512G, 系统版本:13.2 (22D49)**
+* 默认使用charset_mnbvc方案, 可以用过修改api.py 19行,设置 mode=2切换至使用charset_normalizer方案
 ```
-文件名: tests/.DS_Store, 编码: unknow
-文件名: tests/fixtures/test4.txt, 编码: gb18030
-文件名: tests/fixtures/1045.txt, 编码: gb18030
-文件名: tests/fixtures/10.txt, 编码: gb18030
-文件名: tests/fixtures/test2.txt, 编码: unknow
-文件名: tests/fixtures/test3.txt, 编码: unknow
-文件名: tests/fixtures/test.txt, 编码: utf_8
-文件名: tests/fixtures/18.txt, 编码: utf_8
-总文件数: 8
-总耗时长: 0.5920612812042236
+coding_name = get_cn_charset(file_path, mode=2)
+```
 
+#### 测试结果1 使用charset_mnbvc方案:
 ```
+.....
+文件名: /Users/alan/Downloads/1/mop/律师信，豪宅，及其他⋯⋯（豆腐脑自吹自擂兼自874⋯⋯）.txt, 编码: ['gb18030', 'gb2312']
+文件名: /Users/alan/Downloads/1/mop/0426.txt, 编码: ['gb18030', 'gb2312']
+文件名: /Users/alan/Downloads/1/mop/穷人！只能这样了.txt, 编码: ['gb18030', 'gb2312']
+文件名: /Users/alan/Downloads/1/mop/大家作过最BT的事是什么？.txt, 编码: ['gb18030', 'gb2312']
+文件名: /Users/alan/Downloads/1/mop/我的MOP历程.txt, 编码: ['gb18030', 'gb2312']
+总文件数: 1919
+总耗时长: 0.3409309387207031
+```
+#### 测试结果2 使用charset_normalizer方案:
+```
+......
+文件名: /Users/alan/Downloads/1/mop/律师信，豪宅，及其他⋯⋯（豆腐脑自吹自擂兼自874⋯⋯）.txt, 编码: ['gbk']
+文件名: /Users/alan/Downloads/1/mop/0426.txt, 编码: ['iso8859_5']
+文件名: /Users/alan/Downloads/1/mop/穷人！只能这样了.txt, 编码: ['gbk']
+文件名: /Users/alan/Downloads/1/mop/大家作过最BT的事是什么？.txt, 编码: ['cp949']
+文件名: /Users/alan/Downloads/1/mop/我的MOP历程.txt, 编码: ['cp949']
+总文件数: 1919
+总耗时长: 3.112574815750122
+```
+
 
 chinese_charset_detect.py
 ```
