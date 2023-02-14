@@ -1,40 +1,45 @@
 import time
-import sys
-import getopt
+import argparse
+
 from charset_mnbvc import api
 
-OPT_MSG = "chinese_charset_detect.py -i <inputDirectory> inputDirectory为需要检测的目录"
 
-def main(argv):
-    ifolder_path = ""
-    try:
-        opts, args = getopt.getopt(argv, "hi:o:", ["ifolder_path="])
-    except getopt.GetoptError:
-        print(OPT_MSG)
-        sys.exit(2)
-    for opt, arg in opts:
-        if opt == '-h':
-            print()
-            sys.exit()
-        elif opt in ("-i", "--ifolder_path"):
-         ifolder_path = arg
+def parse_args():
+    parser = argparse.ArgumentParser(
+        prog='charset_mnbvc',
+        description='对大量文本文件进行快速编码检测以辅助mnbvc语料集项目的数据清洗工作'
+    )
+    parser.add_argument(
+        '-n', '--normalizer',
+        action='store_const',
+        default=1, const=2,
+        help='使用charset_normalizer方案'
+    )
+    parser.add_argument(
+        '-i',
+        required=True,
+        metavar='inputDirectory',
+        dest='folder_path',
+        help='inputDirectory为需要检测的目录'
+    )
+
+    return parser.parse_args()
+
+
+def main():
+    inputs = parse_args()
 
     start = time.time()
     file_count, results = api.from_dir(
-        folder_path=ifolder_path,
+        folder_path=inputs.folder_path, mode=inputs.normalizer
     )
     for result in results:
-        print(f"文件名: {result[0]}, 编码: {result[1]}")
-    print(f"总文件数: {file_count}")
-
+        print(f'文件名: {result[0]}, 编码: {result[1]}')
+    print(f'总文件数: {file_count}')
 
     end = time.time()
-    print(f"总耗时长: {end - start}")
+    print(f'总耗时长: {end - start}')
 
 
-if __name__ == "__main__":
-    try:
-        main(sys.argv[1:])
-    except Exception as e:
-        print(OPT_MSG)
-        sys.exit(2)
+if __name__ == '__main__':
+    main()
