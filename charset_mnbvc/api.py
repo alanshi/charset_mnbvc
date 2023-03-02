@@ -35,8 +35,9 @@ def scandir(folder_path, ext='.txt'):
             sub_folders.append(f.path)
 
         if f.is_file():
-            if os.path.splitext(f.name)[1].lower() in ext:
-                files.append(f.path)
+            if os.path.splitext(f.name)[1] != "":
+                if os.path.splitext(f.name)[1].lower() in ext:
+                    files.append(f.path)
 
     for directory in list(sub_folders):
         sf, f = scandir(directory, ext)
