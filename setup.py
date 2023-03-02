@@ -1,4 +1,4 @@
-from setuptools import setup, find_packages
+from setuptools import setup
 import pathlib
 
 here = pathlib.Path(__file__).parent.resolve()
@@ -8,7 +8,7 @@ long_description = (here / "README.md").read_text(encoding="utf-8")
 
 setup(
     name="charset_mnbvc",
-    version="0.0.2",
+    version="0.0.3",
     description="本项目旨在对大量文本文件进行快速编码检测以辅助mnbvc语料集项目的数据清洗工作",
     url="https://github.com/alanshi/charset_mnbvc",
     author="Alan Shi",

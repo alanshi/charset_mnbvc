@@ -7,15 +7,28 @@ from charset_mnbvc import api
 ENCODING_MAP = {
     "big5hkscs": "big5"
 }
+BLOCK_SIZE = 1024 * 1024
+
+
 def parse_args():
     parser = argparse.ArgumentParser(
         prog='charset_mnbvc',
         description='对大量文本文件进行快速编码检测以辅助mnbvc语料集项目的数据清洗工作'
     )
     parser.add_argument(
+        '-c', '--cchardet',
+        action='store_const',
+        default=1,
+        const=3,
+        dest='mode',
+        help='使用cchardet方案'
+    )
+    parser.add_argument(
         '-n', '--normalizer',
         action='store_const',
-        default=1, const=2,
+        default=1,
+        const=2,
+        dest='mode',
         help='使用charset_normalizer方案'
     )
     parser.add_argument(
@@ -23,7 +36,7 @@ def parse_args():
         required=True,
         metavar='inputDirectory',
         dest='folder_path',
-        help='inputDirectory为需要转换的目录'
+        help='inputDirectory为需要检测的目录'
     )
 
     return parser.parse_args()
@@ -35,18 +48,19 @@ def convert_to_utf8(file_path, old_encoding):
     file_ext = file_name.split(".")[1]
     target_file_path = f"{path}/{new_file_path}_bak.{file_ext}"
     try:
-        BLOCKSIZE = 1024 * 1024
         with open(file_path, 'rb') as inf:
             with open(target_file_path, 'wb') as ouf:
                 while True:
-                    data = inf.read(BLOCKSIZE)
-                    if not data: break
+                    data = inf.read(BLOCK_SIZE)
+                    if not data:
+                        break
                     converted = data.decode(old_encoding).encode('utf-8')
                     ouf.write(converted)
     except Exception as e:
         print(e)
         return False
     return True
+
 
 def main():
     inputs = parse_args()

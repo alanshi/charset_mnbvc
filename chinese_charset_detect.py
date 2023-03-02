@@ -1,5 +1,5 @@
-import time
 import argparse
+import time
 
 from charset_mnbvc import api
 
@@ -10,10 +10,12 @@ def parse_args():
         description='对大量文本文件进行快速编码检测以辅助mnbvc语料集项目的数据清洗工作'
     )
     parser.add_argument(
-        '-n', '--normalizer',
+        '-c', '--cchardet',
         action='store_const',
-        default=1, const=2,
-        help='使用charset_normalizer方案'
+        default=1,
+        const=2,
+        dest='mode',
+        help='使用cchardet方案'
     )
     parser.add_argument(
         '-i',
@@ -31,10 +33,9 @@ def main():
 
     start = time.time()
     file_count, results = api.from_dir(
-        folder_path=inputs.folder_path, mode=inputs.normalizer
+        folder_path=inputs.folder_path, mode=inputs.mode
     )
-    for result in results:
-        print(f'文件名: {result[0]}, 编码: {result[1]}')
+
     print(f'总文件数: {file_count}')
 
     end = time.time()
