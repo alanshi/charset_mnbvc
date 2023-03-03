@@ -4,3 +4,4 @@ venv
 .DS_Store
 .idea/
 charset_mnbvc.egg-info
+pypi_upload.sh

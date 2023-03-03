@@ -1,9 +1,8 @@
 import os
-import sys
 from re import compile
 
 import cchardet
-
+import tqdm
 
 from .constant import (
     REGEX_FEATURE_ALL,
@@ -17,30 +16,13 @@ from .constant import (
 re_char_check = compile(REGEX_FEATURE_ALL)
 
 
-def progressbar(it, prefix="", size=60, file=sys.stdout):
-    count = len(it)
-
-    def show(j):
-        x = int(size * j / count)
-        file.write("%s[%s%s] %i/%i\r" % (prefix, "#" * x, "." * (size - x), j, count))
-        file.flush()
-
-    show(0)
-    for i, item in enumerate(it):
-        yield item
-        show(i + 1)
-    file.write("\n")
-    file.flush()
-
-
 def from_dir(folder_path, mode):
     results = []
     sub_folders, files = scan_dir(folder_path)
     file_count = len(files)
-    for idx in progressbar(range(file_count), "Processing: ", 40):
+    for idx in tqdm.tqdm(range(file_count), "编码检测进度"):
         file_path = files[idx]
         coding_name = get_cn_charset(file_path, mode=mode)
-        print(f'文件名: {file_path}, 编码: {coding_name}')
         results.append(
             (file_path, coding_name)
         )
@@ -88,14 +70,13 @@ def get_cn_charset(file_path, mode=1):
                     encoding: data.decode(encoding=encoding, errors='ignore')
                     for encoding in ENCODINGS
                 }
-
                 # regex match
                 final_encodings = [
                     k
                     for k, v in converted_info.items() if re_char_check.findall(v)
                 ]
 
-                if len(final_encodings) > 1:
+                if len(final_encodings) > 1 and 'gb18030' not in final_encodings:
                     final_encodings = check_by_cchardect(data=data)
 
                 # returns the match condition
@@ -103,6 +84,8 @@ def get_cn_charset(file_path, mode=1):
                     # try to use cchardet if the normal decoding does not work
                     final_encodings = check_by_cchardect(data=data)
 
+                if 'gb18030' in final_encodings:
+                    final_encodings = ['gb18030']
             else:
                 final_encodings = check_by_cchardect(data=data)
 
