@@ -38,17 +38,6 @@ print(f"文件名: {file_path}, 编码: {coding_name}")
 
 ```
 
-
-#### 完整使用范例:
-```
-python chinese_charset_detect.py -i tests
-```
-
-测试环境说明（开发测试用机):
-* MacBook Air Apple M2, 内存:16 GB, 硬盘:512G, 系统版本:13.2 (22D49)**, Python 3.9.6
-* 默认使用charset_mnbvc方案, 可切换使用cchardet方案
-
-
 #### 编码转换使用范例:
 NOTICE: 文件默认转换为utf-8格式, 文件转换前后会将原始文件原地复制为raw格式用于备份, 并用utf-8格式覆盖原始文件, 操作流程如下:
 
@@ -82,7 +71,7 @@ optional arguments:
 文件编码转换 范例:
 `python convert_files.py -i /Users/alan/Downloads/20230101 -step 2`
 ```
-编码转换进度: 100%|████████████████████████████████████████| 5621/5621 [00:33<00:00, 169.93it/s]
+编码转换进度: 100%|████████████████████████████| 5621/5621 [00:33<00:00, 169.93it/s]
 总文件数: 5621
 转换成功文件数: 5609
 转换失败文件数: 12
@@ -90,3 +79,7 @@ optional arguments:
 /Users/alan/Downloads/20230109/zlibrary.20230109.1.杂书/5753250.txt 转换失败, 编码格式错误: 可能是文件内容为空!
 ......
 ```
+
+测试环境说明（开发测试用机):
+* MacBook Air Apple M2, 内存:16 GB, 硬盘:512G, 系统版本:13.2 (22D49)**, Python 3.9.6
+* 默认使用charset_mnbvc方案, 可切换使用cchardet方案
