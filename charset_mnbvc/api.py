@@ -97,7 +97,9 @@ def check_by_mnbvc(data):
 
     return final_encoding
 
+
 def get_cn_charset(file_path, mode=1):
+    mode = 2
     try:
         with open(file_path, 'rb') as fp:
             data = fp.read(CHUNK_SIZE)
