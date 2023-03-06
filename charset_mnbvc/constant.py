@@ -25,6 +25,7 @@ ENCODINGS = [
 
 CCHARDECT_ENCODING_MAP = {
     "UTF-8": "utf_8",
+    "UTF-16": "utf_16",
     "UTF-8-SIG": "utf_8_sig",
     "UTF-16BE": "utf_16_be",
     "UTF-16LE": "utf_16_le",
