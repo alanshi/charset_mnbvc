@@ -6,6 +6,7 @@ import tqdm
 
 from .constant import (
     REGEX_FEATURE_ALL,
+    REGEX_FEATURE,
     CHUNK_SIZE,
     ENCODINGS,
     CCHARDECT_ENCODING_MAP
@@ -15,6 +16,10 @@ from .constant import (
 # compile makes it more efficient
 re_char_check = compile(REGEX_FEATURE_ALL)
 
+
+def from_file(file_path, mode):
+    coding_name = get_cn_charset(file_path, mode=mode)
+    return file_path, coding_name
 
 def from_dir(folder_path, mode):
     results = []
@@ -49,47 +54,63 @@ def scan_dir(folder_path, ext='.txt'):
 
 
 def check_by_cchardect(data):
-    coding = cchardet.detect(data).get("encoding")
-    converted_coding = CCHARDECT_ENCODING_MAP.get(coding)
-    if not converted_coding:
-        converted_coding = coding
-    return [converted_coding]
+    encoding = cchardet.detect(data).get("encoding")
+    converted_encoding = CCHARDECT_ENCODING_MAP.get(encoding)
+    if converted_encoding == "ascii" or converted_encoding == "windows_1252":
+        try:
+            ret = data.decode("utf-8")
+            if ret:
+                converted_encoding = "utf-8"
+            else:
+                converted_encoding = encoding
+        except Exception as e:
+            pass
 
+    return converted_encoding
+
+def check_by_mnbvc(data):
+
+    final_encoding = None
+    # convert coding
+    converted_info = {
+        encoding: data.decode(encoding=encoding, errors='ignore')
+        for encoding in ENCODINGS
+    }
+    # regex match
+    final_encodings = [
+        k
+        for k, v in converted_info.items() if re_char_check.findall(v)
+    ]
+    # returns the match condition
+    if not final_encodings:
+        # try to use cchardet if the normal decoding does not work
+        final_encodings = [check_by_cchardect(data=data)]
+
+    if len(final_encodings) > 1:
+        if "utf_8" in final_encodings:
+            final_encoding = "utf_8"
+
+        if "utf_16" in final_encodings:
+            final_encoding = "utf_16"
+    else:
+        final_encoding = final_encodings[0]
+
+    return final_encoding
 
 def get_cn_charset(file_path, mode=1):
-    final_encodings = []
     try:
         with open(file_path, 'rb') as fp:
             data = fp.read(CHUNK_SIZE)
             if not data:
-                return False
+                return None
 
             if mode == 1:
-                # convert coding
-                converted_info = {
-                    encoding: data.decode(encoding=encoding, errors='ignore')
-                    for encoding in ENCODINGS
-                }
-                # regex match
-                final_encodings = [
-                    k
-                    for k, v in converted_info.items() if re_char_check.findall(v)
-                ]
-
-                if len(final_encodings) > 1 and 'gb18030' not in final_encodings:
-                    final_encodings = check_by_cchardect(data=data)
-
-                # returns the match condition
-                if not final_encodings:
-                    # try to use cchardet if the normal decoding does not work
-                    final_encodings = check_by_cchardect(data=data)
-
-                if 'gb18030' in final_encodings:
-                    final_encodings = ['gb18030']
+                final_encoding = check_by_mnbvc(data=data)
             else:
-                final_encodings = check_by_cchardect(data=data)
+                final_encoding = check_by_cchardect(data=data)
 
     except Exception as e:
+        final_encoding = None
         print(e)
 
-    return final_encodings
+    return final_encoding
