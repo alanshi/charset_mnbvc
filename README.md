@@ -59,16 +59,16 @@ optional arguments:
   -step PROCESS_STEP    执行步骤,1为编码检测,2为编码转换
   -r result_file_name   指定编码检测结果文件名
 ```
-文件编码检测 范例:
-`python convert_files.py -i /Users/alan/Downloads/20230109 -step 1 -r check_result.csv`
+编码检测范例:
+`python convert_files.py -i /Downloads/20230109 -step 1 -r check_result.csv`
 
 ```
 编码检测进度: 100%|████████████████████████████| 5609/5609 [00:00<00:00, 9462.80it/s]
 已将检测结果保存至check_results.csv文件中,请查阅!
 ```
 
-文件编码转换 范例:
-`python convert_files.py -i /Users/alan/Downloads/20230101 -step 2 -r check_result.csv`
+编码转换 范例:
+`python convert_files.py -i /Downloads/20230101 -step 2 -r check_result.csv`
 ```
 编码转换进度: 100%|████████████████████████████| 5621/5621 [00:33<00:00, 169.93it/s]
 总文件数: 5621
