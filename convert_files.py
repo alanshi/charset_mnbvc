@@ -44,6 +44,13 @@ def parse_args():
         dest='process_step',
         help='执行步骤,1为编码检测,2为编码转换'
     )
+    parser.add_argument(
+        '-r',
+        required=True,
+        metavar='result_file_name',
+        dest='result_file_name',
+        help='指定编码检测结果文件名'
+    )
 
     return parser.parse_args()
 
@@ -105,18 +112,19 @@ def main():
 
     inputs = parse_args()
     process_step = inputs.process_step
+    result_file_name = inputs.result_file_name
 
     if process_step == 1:
         file_count, results = encoding_check(inputs)
-        with open('check_results.csv', 'w', newline='') as file:
+        with open(result_file_name, 'w', newline='') as file:
             writer = csv.writer(file)
             for row in results:
                 writer.writerow(row)
-        print("已将检测结果保存至check_results.csv文件中,请查阅!")
+        print(f"已将检测结果保存至{result_file_name}文件中,请查阅!")
 
     else:
         files = []
-        with open('check_results.csv', newline='') as file:
+        with open(result_file_name, newline='') as file:
             reader = csv.reader(file)
             for row in reader:
                 files.append(

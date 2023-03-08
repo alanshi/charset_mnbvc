@@ -46,7 +46,7 @@ NOTICE: 文件默认转换为utf-8格式, 文件转换前后会将原始文件�
 2: 将文本使用utf-8格式覆盖到test.txt
 
 ```
-usage: convert_files.py [-h] [-p PROCESS_NUM] [-c] -i inputDirectory [-step PROCESS_STEP]
+usage: convert_files.py [-h] [-p PROCESS_NUM] [-c] -i inputDirectory [-step PROCESS_STEP] -r result_file_name
 
 对大量文本文件进行快速编码检测以辅助mnbvc语料集项目的数据清洗工作
 
@@ -57,11 +57,10 @@ optional arguments:
   -c, --cchardet        使用cchardet方案
   -i inputDirectory     inputDirectory为需要检测的目录
   -step PROCESS_STEP    执行步骤,1为编码检测,2为编码转换
-
-
+  -r result_file_name   指定编码检测结果文件名
 ```
 文件编码检测 范例:
-`python convert_files.py -i /Users/alan/Downloads/20230109 -step 1`
+`python convert_files.py -i /Users/alan/Downloads/20230109 -step 1 -r check_result.csv`
 
 ```
 编码检测进度: 100%|████████████████████████████| 5609/5609 [00:00<00:00, 9462.80it/s]
@@ -69,7 +68,7 @@ optional arguments:
 ```
 
 文件编码转换 范例:
-`python convert_files.py -i /Users/alan/Downloads/20230101 -step 2`
+`python convert_files.py -i /Users/alan/Downloads/20230101 -step 2 -r check_result.csv`
 ```
 编码转换进度: 100%|████████████████████████████| 5621/5621 [00:33<00:00, 169.93it/s]
 总文件数: 5621
