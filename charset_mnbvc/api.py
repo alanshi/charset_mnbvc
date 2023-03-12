@@ -60,7 +60,7 @@ def check_by_cchardect(data):
         try:
             ret = data.decode("utf-8")
             if ret:
-                converted_encoding = "utf-8"
+                converted_encoding = "utf_8"
             else:
                 converted_encoding = encoding
         except Exception as e:

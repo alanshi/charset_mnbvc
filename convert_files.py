@@ -1,6 +1,8 @@
 import os
+import sys
 import csv
 import shutil
+from pathlib import Path
 import argparse
 from concurrent.futures import ProcessPoolExecutor
 from tqdm import tqdm
@@ -51,18 +53,32 @@ def parse_args():
         dest='result_file_name',
         help='指定编码检测结果文件名'
     )
+    parser.add_argument(
+        '-u',
+        action='store_true',
+        dest='undo',
+        help='恢复文件'
+    )
 
     return parser.parse_args()
 
+def revert_files(file_path):
+    try:
+        path = Path(file_path)
+        raw_file_path = f"{path.parent}/{path.stem}.raw"
+        txt_file_path = f"{path.parent}/{path.stem}.txt"
+        shutil.copy2(raw_file_path, txt_file_path)
+        os.remove(raw_file_path)
+        return True
+    except Exception as e:
+        return False
 
 def convert_file_to_utf8(file):
 
     file_path = file[0]
     encoding = file[1]
-    path, file_name = os.path.split(file_path)
-    new_file_name = file_name.split(".")[0]
-    raw_file_path = f"{path}/{new_file_name}.raw"
-    # backup process
+    path = Path(file_path)
+    raw_file_path = f"{path.parent}/{path.stem}.raw"
     shutil.copy2(file_path, raw_file_path)
     if not encoding:
         msg = f"{file_path} 转换失败, 编码格式错误:{encoding} 可能是文件内容为空!"
@@ -82,6 +98,22 @@ def convert_file_to_utf8(file):
 
     return True, None
 
+def run_revert_files(files, process_num):
+    results = []
+    with ProcessPoolExecutor(process_num) as executor:
+        futures = []
+        with tqdm(desc="文件恢复进度", total=len(files)) as pbar:
+            for file in files:
+                # 提交任务，并将Future对象添加到futures列表中
+                future = executor.submit(revert_files, file)
+                futures.append(future)
+
+            # 遍历futures列表，获取结果并更新进度条
+            for future in futures:
+                results.append(future.result())
+                pbar.update(1)
+
+    return results
 
 def run_convert_files(files, process_num):
     results = []
@@ -113,6 +145,20 @@ def main():
     inputs = parse_args()
     process_step = inputs.process_step
     result_file_name = inputs.result_file_name
+    undo = inputs.undo
+
+    if undo:
+
+        files = []
+        with open(result_file_name, newline='') as file:
+            reader = csv.reader(file)
+            for row in reader:
+                files.append(
+                    (row[0])
+                )
+        run_revert_files(files, inputs.process_num)
+        print("文件恢复完毕!")
+        sys.exit()
 
     if process_step == 1:
         file_count, results = encoding_check(inputs)
@@ -148,7 +194,7 @@ def main():
         print(f"转换成功文件数: {success_count}")
         print(f"转换失败文件数: {failed_count}")
         for msg in failed_msgs:
-            print(msg)
+            sys.stderr.write(f"{msg}\n")
 
 
 if __name__ == "__main__":
