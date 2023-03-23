@@ -117,6 +117,8 @@ No, Windows code pages must be either one byte (SBCS) or a mix of one and two by
 解决这个问题最简单的方式就是使用MS936来处理这种有问题的文件(Windows Code page 936 (abbreviated MS936, Windows-936 or (ambiguously) CP936))。不过遗憾的是Python语言暂时没有独立支持MS936或者CP936，而是把它们统一作为GBK处理了。https://docs.python.org/3/library/codecs.html，因此目前单纯使用Python对文件内容进行decode无法正确处理这些特殊符号。
 
 最后我用Java写了一段代码验证，可以顺利的用MS936解析出文件中的欧元符号。
+![iZAjIJ.png](https://i.328888.xyz/2023/03/23/iZAjIJ.png)
+
 
 ```
 import java.io.BufferedReader;
