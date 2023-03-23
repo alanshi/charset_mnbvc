@@ -21,13 +21,18 @@ def from_file(file_path, mode):
     coding_name = get_cn_charset(file_path, mode=mode)
     return file_path, coding_name
 
+
 def from_dir(folder_path, mode):
     results = []
     sub_folders, files = scan_dir(folder_path)
     file_count = len(files)
     for idx in tqdm.tqdm(range(file_count), "编码检测进度"):
         file_path = files[idx]
+
         coding_name = get_cn_charset(file_path, mode=mode)
+        if not coding_name:
+            coding_name = "None"
+
         results.append(
             (file_path, coding_name)
         )
@@ -67,6 +72,7 @@ def check_by_cchardect(data):
             pass
 
     return converted_encoding
+
 
 def check_by_mnbvc(data):
 
