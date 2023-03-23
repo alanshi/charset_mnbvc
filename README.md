@@ -83,3 +83,79 @@ optional arguments:
 测试环境说明（开发测试用机):
 * MacBook Air Apple M2, 内存:16 GB, 硬盘:512G, 系统版本:13.2 (22D49)**, Python 3.9.6
 * 默认使用charset_mnbvc方案, 可切换使用cchardet方案
+
+目前存在的问题:
+
+1. cchardect 编码检测会误报，比如原本是gb18030的可能会检测为ibm852 例如 20230102/aliyun.20230102.1.网络小说/35.txt
+
+2. 部分段落存在乱码，导致使用已检测的编码格式打开这段内容时出错，可以用errors="ignore" 跳过，但跳过这段内容会出现数据遗失。数据文件范例 224.txt, https://pan.baidu.com/s/1gBVBxv_WGie6W6hCIZxTXQ 提取码: stfs
+
+经过测试,初步发现原因是因为GB18030和cp936，ms936几种编码格式在Python具体实现造成的。
+以224.txt文件中出现的乱码情况为里，其出错的位置是2753行 的这部分内容 "100～120RMB/80～90$/65～70?左右" 这个?号原本应该是一个欧元符号€，但当Python代码用GB18030编码对该文件内容进行decode处理时，在这个欧元符号处就会到了解析错误。
+
+通常情况下在Windows中简体中文用的是CP936代码页使用0x80来表示欧元符号，而在GB18030编码中没有使用0x80编码位来表示欧元符号。
+
+以下是微软对这个问题的详细解释：
+
+```
+What is GB18030?
+GB18030–2000 is a new Chinese character encoding standard. The standard contains many characters and has some tough new conformance requirements. GB18030-2000 encodes characters in sequences of one, two, or four bytes. These sequences are defined as follows:
+
+ Single-byte: 00-0x7f
+ Two-byte: 0x81-0xfe + 0x40-0x7e, 0x80-0xfe
+ Four-byte: 0x81-0xfe + 0x30-0x39 + 0x81-0xfe + 0x30-0x39
+The single-byte section applies the standard GB 11383 coding structure and principles by using the code points 0x00 through 0x7f. GB 11383 is identical to ISO 4873:1986
+
+The two-byte section uses two eight-bit sequences -- much in the same manner as most DBCS (double-byte character sets) do -- to express a character. The leading byte code points range from 0x81 through 0xfe. The trailing byte code points ranges from 0x40 through 0x7e and 0x80 through 0xfe. This section has the same problem as most DBCS in as much as some code points can be either a leading or trailing byte, thus making character delimitation more complicated.
+
+The four-byte section uses the code points 0x30 through 0x39 as a way to extend the two-byte encodings. Which means the four-byte code points range from 0x81308130 through 0xfe39fe39.
+
+Is GB18030 replacing the Windows Simplified Chinese code page (CP936)?
+No, Windows code pages must be either one byte (SBCS) or a mix of one and two bytes (DBCS). This requirement is reflected throughout our code e.g. in data structures, program interfaces, network protocols and applications. The existing code page for Simplified Chinese, CP936, is a double byte code page. GB18030 is a four–byte code page i.e. every character is represented by one, two or four bytes. To replace CP936 with GB18030 would require rewriting much of the system. Even if we were to do this, such a system would not run regular applications nor interoperate with regular Windows.
+```
+
+解决这个问题最简单的方式就是使用MS936来处理这种有问题的文件(Windows Code page 936 (abbreviated MS936, Windows-936 or (ambiguously) CP936))。不过遗憾的是Python语言暂时没有独立支持MS936或者CP936，而是把它们统一作为GBK处理了。`https://docs.python.org/3/library/codecs.html`，因此目前单纯使用Python对文件内容进行decode无法正确处理这些特殊符号。
+
+最后我用Java写了一段代码验证，可以顺利的用MS936解析出文件中的欧元符号。
+
+```
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.Charset;
+
+public class TextFileReader {
+    public static void main(String[] argsm) {
+        String filePath = "/Users/alan/Downloads/test/224.txt";
+        String charsetName = "MS936";
+        try {
+            String fileContent = readTextFile(filePath, charsetName);
+            System.out.println(fileContent);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static String readTextFile(String filePath, String charsetName) throws IOException {
+        File file = new File(filePath);
+        StringBuilder sb = new StringBuilder();
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(new FileInputStream(file), Charset.forName(charsetName)))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                sb.append(line).append(System.lineSeparator());
+            }
+        }
+        return sb.toString();
+    }
+}
+
+```
+现在解决这个问题的最简单的思路是换一种语言实现编码转换或者在Python中引入Java的库对MS936编码进行正确处理。
+
+
+
+
+
