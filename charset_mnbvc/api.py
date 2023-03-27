@@ -60,33 +60,47 @@ def scan_dir(folder_path, ext='.txt'):
 
 def check_by_cchardect(data):
     encoding = cchardet.detect(data).get("encoding")
+
     converted_encoding = CCHARDECT_ENCODING_MAP.get(encoding)
-    if converted_encoding == "ascii" or converted_encoding == "windows_1252":
+
+    # if the encoding is not in the list, try to use utf-8 to decode
+    if converted_encoding in ["ascii", "windows_1252", "utf_8"]:
         try:
             ret = data.decode("utf-8")
             if ret:
                 converted_encoding = "utf_8"
             else:
                 converted_encoding = encoding
+        # 为gb18030特殊处理
         except Exception as e:
-            pass
+            try:
+                ret = data.decode("gb18030")
+            except UnicodeDecodeError as e:
+                data = bytearray(data)
+                for i in range(len(data)):
+                    if 0x80 <= data[i] <= 0xfe:
+                        data[i] = 0x00
+                ret = data.decode("GB18030")
+            if ret:
+                converted_encoding = "gb18030"
 
     return converted_encoding
 
 
 def check_by_mnbvc(data):
-
     final_encoding = None
     # convert coding
     converted_info = {
         encoding: data.decode(encoding=encoding, errors='ignore')
         for encoding in ENCODINGS
     }
+
     # regex match
     final_encodings = [
         k
         for k, v in converted_info.items() if re_char_check.findall(v)
     ]
+
     # returns the match condition
     if not final_encodings:
         # try to use cchardet if the normal decoding does not work

@@ -1,5 +1,5 @@
 # read file in chunks
-CHUNK_SIZE = 500
+CHUNK_SIZE = 2500
 
 # 正则判断中文标点符号,标点符号包含 。 ； ， ： “ ”（ ） 、 ？ 《 》 空格
 REGEX_FEATURE = r'[\u3002\uff1b\uff0c\uff1a\u201c\u201d\uff08\uff09\u3001\uff1f\u300a\u300b\u3000]'
@@ -20,7 +20,7 @@ ENCODINGS = [
     'utf_8',
     'utf_16',
     'gb18030',
-    'big5',
+    'big5'
 ]
 
 CCHARDECT_ENCODING_MAP = {

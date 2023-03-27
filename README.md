@@ -87,9 +87,8 @@ optional arguments:
 目前存在的问题:
 
 1. cchardect 误报问题
-    * 比如原本是gbk的可能会检测为ibm852 例如 20230102/aliyun.20230102.1.网络小说/35.txt
-    * 原本是gbk编码可能会被检测为euc_jp 例如 20230101/aliyun.20230101.10.名著/865.txt
-    * 原本是gbk的可能会检测为utf-8 20230101/aliyun.20230101.6.网络小说/48.txt，其内容均为乱码
+    * 比如原本是gbk的可能会检测为ibm852 例如 20230102/aliyun.20230102.1.网络小说/35.txt(通过调整CHUNK_SIZE大小解决，文章开头包含大量英文或特殊字符容易被cchardet检测为其他编码格式)
+    * 原本是gbk的可能会检测为utf-8 20230101/aliyun.20230101.6.网络小说/48.txt，其内容均为乱码，并且默认cchardet检测为utf-8，需要经过特殊处理才能检测为gb18030 (api.py 74行开始到85行)
 
 
 ```
@@ -98,27 +97,7 @@ optional arguments:
 ```
 
 
-2. 部分文件内容转码到utf-8过程中不会报错，但内容会丢失 例如:20230101/aliyun.20230101.10.名著/855.txt, 编码 euc_jp
-
-转码前内容范例:
-
-```
-¡¡¡¡Wind, Sand and Stars*
-¡¡¡¡
-¡¡¡¡Antoine de St. Exupery
-¡¡¡¡
-```
-
-转码后 ¡¡¡¡丢失，被空字符串代替
-
-```
-　　Wind, Sand and Stars*
-　　
-　　Antoine de St. Exupery
-　　
-```
-
-3. GB18030/GBK 与CP936兼容性问题，导致使用已检测的编码格式打开这段内容时出错，可以用errors="ignore" 跳过，但跳过这段内容会出现数据遗失。数据文件范例 224.txt, https://pan.baidu.com/s/1gBVBxv_WGie6W6hCIZxTXQ 提取码: stfs
+2. GB18030/GBK 与CP936兼容性问题，导致使用已检测的编码格式打开这段内容时出错，可以用errors="ignore" 跳过，但跳过这段内容会出现数据遗失。数据文件范例 224.txt, https://pan.baidu.com/s/1gBVBxv_WGie6W6hCIZxTXQ 提取码: stfs
 
 经过测试,初步发现原因是因为GB18030和cp936，ms936几种编码格式在Python具体实现造成的。
 以224.txt文件中出现的乱码情况为里，其出错的位置是2753行 的这部分内容 `"100～120RMB/80～90$/65～70?左右"` 这个?号原本应该是一个欧元符号€，但当Python代码用GB18030编码对该文件内容进行decode处理时，在这个欧元符号处就会到了解析错误。
