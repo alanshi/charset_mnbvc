@@ -69,20 +69,8 @@ def check_by_cchardect(data):
             ret = data.decode("utf-8")
             if ret:
                 converted_encoding = "utf_8"
-            else:
-                converted_encoding = encoding
-        # 为gb18030特殊处理
         except Exception as e:
-            try:
-                ret = data.decode("gb18030")
-            except UnicodeDecodeError as e:
-                data = bytearray(data)
-                for i in range(len(data)):
-                    if 0x80 <= data[i] <= 0xfe:
-                        data[i] = 0x00
-                ret = data.decode("GB18030")
-            if ret:
-                converted_encoding = "gb18030"
+            converted_encoding = converted_encoding
 
     return converted_encoding
 
