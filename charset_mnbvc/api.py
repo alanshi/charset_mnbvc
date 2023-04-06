@@ -109,7 +109,7 @@ def check_by_mnbvc(data):
 def get_cn_charset(file_path, mode=1):
     try:
         with open(file_path, 'rb') as fp:
-            data = fp.read(CHUNK_SIZE)
+            data = fp.read()
             if not data:
                 return None
 
