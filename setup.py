@@ -8,7 +8,7 @@ long_description = (here / "README.md").read_text(encoding="utf-8")
 
 setup(
     name="charset_mnbvc",
-    version="0.0.4",
+    version="0.0.5",
     description="本项目旨在对大量文本文件进行快速编码检测以辅助mnbvc语料集项目的数据清洗工作",
     url="https://github.com/alanshi/charset_mnbvc",
     author="Alan Shi",
