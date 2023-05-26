@@ -5,14 +5,19 @@ import shutil
 from pathlib import Path
 import argparse
 from concurrent.futures import ProcessPoolExecutor
+
 from tqdm import tqdm
 
 from charset_mnbvc import api
+from charset_mnbvc import verify
 
 BLOCK_SIZE = 1024 * 1024
 
 
 def parse_args():
+    """
+    解析命令行参数
+    """
     parser = argparse.ArgumentParser(
         prog='convert_files.py',
         description='对大量文本文件进行快速编码检测以辅助mnbvc语料集项目的数据清洗工作'
@@ -62,19 +67,26 @@ def parse_args():
 
     return parser.parse_args()
 
+
 def revert_files(file_path):
+    """
+    根据目录恢复文件
+    """
     try:
         path = Path(file_path)
         raw_file_path = f"{path.parent}/{path.stem}.raw"
         txt_file_path = f"{path.parent}/{path.stem}.txt"
         shutil.copy2(raw_file_path, txt_file_path)
         os.remove(raw_file_path)
-        return True
     except Exception as e:
         return False
 
-def convert_file_to_utf8(file):
+    return True
 
+def convert_file_to_utf8(file):
+    """
+    将单个文件转换为utf-8编码
+    """
     file_path = file[0]
     encoding = file[1]
     path = Path(file_path)
@@ -92,13 +104,17 @@ def convert_file_to_utf8(file):
                 f_out.write(f_in.read())
 
     except Exception as e:
-        msg = f"{file_path} {encoding}转换到utf8失败, {e}"
+        msg = f"{file_path} {encoding} 转换到utf8失败, {e}"
         os.remove(file_path)
         return False, msg
 
     return True, None
 
+
 def run_revert_files(files, process_num):
+    """
+    恢复文件
+    """
     results = []
     with ProcessPoolExecutor(process_num) as executor:
         futures = []
@@ -115,7 +131,11 @@ def run_revert_files(files, process_num):
 
     return results
 
+
 def run_convert_files(files, process_num):
+    """
+    转换文件编码
+    """
     results = []
     with ProcessPoolExecutor(process_num) as executor:
         futures = []
@@ -132,23 +152,29 @@ def run_convert_files(files, process_num):
 
     return results
 
+
 def encoding_check(inputs):
-    # 获取文件编码
+    """
+    编码检测
+    """
     file_count, results = api.from_dir(
         folder_path=inputs.folder_path,
         mode=inputs.mode
     )
     return file_count, results
 
-def main():
 
+def main():
+    """
+    主函数
+    """
     inputs = parse_args()
     process_step = inputs.process_step
     result_file_name = inputs.result_file_name
     undo = inputs.undo
+    input_folder_path = inputs.folder_path
 
     if undo:
-
         files = []
         with open(result_file_name, newline='') as file:
             reader = csv.reader(file)
@@ -161,14 +187,17 @@ def main():
         sys.exit()
 
     if process_step == 1:
+        print("###################################### Step1 start ######################################")
         file_count, results = encoding_check(inputs)
         with open(result_file_name, 'w', newline='') as file:
             writer = csv.writer(file)
             for row in results:
                 writer.writerow(row)
         print(f"已将检测结果保存至{result_file_name}文件中,请查阅!")
+        print("###################################### Step1 end ######################################")
 
-    else:
+    if process_step == 2:
+        print("###################################### Step2 start ######################################")
         files = []
         with open(result_file_name, newline='') as file:
             reader = csv.reader(file)
@@ -195,7 +224,11 @@ def main():
         print(f"转换失败文件数: {failed_count}")
         for msg in failed_msgs:
             sys.stderr.write(f"{msg}\n")
+        print("###################################### Step2 end ######################################")
 
+    if process_step == 3:
+        # auto verify files
+        verify.process(input_folder_path)
 
 if __name__ == "__main__":
     main()
