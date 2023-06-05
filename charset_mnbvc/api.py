@@ -1,4 +1,5 @@
 import os
+import sys
 from re import compile
 
 import cchardet
@@ -17,12 +18,32 @@ from .constant import (
 re_char_check = compile(REGEX_FEATURE_ALL)
 
 
+def from_data(data, mode) -> str:
+    """
+    :param data: data
+    :param mode: 1: use mnbvc, 2: use cchardet
+    :return: encoding
+    """
+    coding_name = get_cn_charset(data, mode=mode)
+    return coding_name
+
+
 def from_file(file_path, mode):
+    """
+    :param file_path: file path
+    :param mode: 1: use mnbvc, 2: use cchardet
+    :return: encoding
+    """
     coding_name = get_cn_charset(file_path, mode=mode)
     return file_path, coding_name
 
 
 def from_dir(folder_path, mode):
+    """
+    :param folder_path: folder path
+    :param mode: 1: use mnbvc, 2: use cchardet
+    :return: array
+    """
     results = []
     sub_folders, files = scan_dir(folder_path)
     file_count = len(files)
@@ -41,6 +62,11 @@ def from_dir(folder_path, mode):
 
 
 def scan_dir(folder_path, ext='.txt'):
+    """
+    :param folder_path: folder path
+    :param ext: file extension
+    :return: array
+    """
     sub_folders, files = [], []
     for f in os.scandir(folder_path):
         if f.is_dir():
@@ -59,6 +85,10 @@ def scan_dir(folder_path, ext='.txt'):
 
 
 def check_by_cchardect(data):
+    """
+    :param data: data
+    :return: encoding
+    """
     encoding = cchardet.detect(data).get("encoding")
 
     converted_encoding = CCHARDECT_ENCODING_MAP.get(encoding)
@@ -69,13 +99,17 @@ def check_by_cchardect(data):
             ret = data.decode("utf-8")
             if ret:
                 converted_encoding = "utf_8"
-        except Exception as e:
+        except Exception as err:
             converted_encoding = converted_encoding
 
     return converted_encoding
 
 
 def check_by_mnbvc(data):
+    """
+    :param data: data
+    :return: encoding
+    """
     final_encoding = None
     # convert coding
     converted_info = {
@@ -106,20 +140,44 @@ def check_by_mnbvc(data):
     return final_encoding
 
 
-def get_cn_charset(file_path, mode=1):
+def get_cn_charset(source_data, mode=1, source_type="file"):
+    """
+    :param source_data: file path
+    :param mode: 1: use mnbvc, 2: use cchardet
+    :param source_type: file or data
+    :return: encoding
+    """
+    encoding = None
     try:
-        with open(file_path, 'rb') as fp:
-            data = fp.read()
-            if not data:
-                return None
+        data = ""
+        if source_type == "file":
+            with open(source_data, 'rb') as fp:
+                data = fp.read()
+                if not data:
+                    return "Empty File"
+        else:
+            data = source_data
 
-            if mode == 1:
-                final_encoding = check_by_mnbvc(data=data)
-            else:
-                final_encoding = check_by_cchardect(data=data)
+        encoding = check_by_mnbvc(data=data) if mode == 1 else check_by_cchardect(data=data)
 
-    except Exception as e:
-        final_encoding = None
-        print(e)
+    except Exception as err:
+        sys.stderr.write(f"Error: {str(err)}\n")
 
-    return final_encoding
+    return encoding
+
+
+def convert_encoding(source_data, input_encoding, output_encoding="utf-8"):
+    """
+    :param source_data: data
+    :param input_encoding: input encoding
+    :param output_encoding: output encoding
+    :return: data
+    """
+    try:
+        data = source_data.decode(encoding=input_encoding)
+        data = data.encode(encoding=output_encoding)
+    except Exception as err:
+        sys.stderr.write(f"Error: {str(err)}\n")
+        data = source_data
+
+    return data

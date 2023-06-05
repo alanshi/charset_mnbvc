@@ -61,7 +61,7 @@ optional arguments:
   -u                    恢复文件
 ```
 编码检测范例:
-`python convert_files.py -i /Downloads/20230109 -step 1 -r check_result.csv`
+`python convert_files.py -i /Users/alan/temp_test -step 1 -r check_result.csv`
 
 ```
 ###################################### Step1 start ######################################
@@ -71,7 +71,7 @@ optional arguments:
 ```
 
 编码转换 范例(转换完毕后自动加入step3 用于二次验证已转换为utf-8的文件是否正常):
-`python convert_files.py -i /Downloads/20230101 -step 2 -r check_result.csv`
+`python convert_files.py -i /Users/alan/temp_test -step 2 -r check_result.csv`
 ```
 ###################################### Step2 start ######################################
 编码转换进度: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████| 2152/2152 [00:00<00:00, 5229.08it/s]
@@ -92,7 +92,7 @@ optional arguments:
 ```
 
 单独进行utf-8文件二次验证:
-`python convert_files.py -i /Downloads/20230101 -step 3 -r check_result.csv`
+`python convert_files.py -i /Users/alan/temp_test -step 3 -r check_result.csv`
 
 ```
 ###################################### Step3 start ######################################
