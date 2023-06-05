@@ -24,7 +24,7 @@ def from_data(data, mode) -> str:
     :param mode: 1: use mnbvc, 2: use cchardet
     :return: encoding
     """
-    coding_name = get_cn_charset(data, mode=mode)
+    coding_name = get_cn_charset(source_data=data, mode=mode, source_type="data")
     return coding_name
 
 
@@ -34,7 +34,7 @@ def from_file(file_path, mode):
     :param mode: 1: use mnbvc, 2: use cchardet
     :return: encoding
     """
-    coding_name = get_cn_charset(file_path, mode=mode)
+    coding_name = get_cn_charset(source_data=file_path, mode=mode, source_type="file")
     return file_path, coding_name
 
 
@@ -50,7 +50,7 @@ def from_dir(folder_path, mode):
     for idx in tqdm.tqdm(range(file_count), "编码检测进度"):
         file_path = files[idx]
 
-        coding_name = get_cn_charset(file_path, mode=mode)
+        coding_name = get_cn_charset(source_data=file_path, mode=mode, source_type="file")
         if not coding_name:
             coding_name = "None"
 
@@ -140,7 +140,7 @@ def check_by_mnbvc(data):
     return final_encoding
 
 
-def get_cn_charset(source_data, mode=1, source_type="file"):
+def get_cn_charset(source_data, source_type="file", mode=1):
     """
     :param source_data: file path
     :param mode: 1: use mnbvc, 2: use cchardet
@@ -166,18 +166,21 @@ def get_cn_charset(source_data, mode=1, source_type="file"):
     return encoding
 
 
-def convert_encoding(source_data, input_encoding, output_encoding="utf-8"):
+def convert_encoding(source_data, source_encoding, target_encoding="utf-8"):
     """
     :param source_data: data
-    :param input_encoding: input encoding
-    :param output_encoding: output encoding
+    :param source_encoding: input encoding
+    :param target_encoding: output encoding
     :return: data
     """
     try:
-        data = source_data.decode(encoding=input_encoding)
-        data = data.encode(encoding=output_encoding)
+        data = source_data.decode(encoding=source_encoding)
+        data = data.encode(encoding=target_encoding).decode(encoding=target_encoding)
     except Exception as err:
         sys.stderr.write(f"Error: {str(err)}\n")
         data = source_data
 
     return data
+
+def test():
+    print("test")

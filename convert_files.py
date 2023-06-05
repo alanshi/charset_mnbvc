@@ -226,6 +226,8 @@ def main():
             sys.stderr.write(f"{msg}\n")
         print("###################################### Step2 end ######################################")
 
+        verify.process(input_folder_path)
+
     if process_step == 3:
         # auto verify files
         verify.process(input_folder_path)
