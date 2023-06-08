@@ -1,19 +1,18 @@
-import os,sys
+import os
+import sys
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from charset_mnbvc.api import (
-    convert_encoding
-)
+from charset_mnbvc import api
 
 
-def convert_file():
+def convert_data():
     """
-    Convert file encoding
+    Convert data encoding
     """
     source_data = b'\xb5\xda\xcb\xc4\xd5\xc2' #gbk 编码
 
-    ret = convert_encoding(
+    ret = api.convert_encoding(
         source_data=source_data,
         source_encoding="gbk",
         target_encoding="utf-8",
@@ -21,4 +20,4 @@ def convert_file():
     print(ret)
 
 if __name__ == '__main__':
-    convert_file()
+    convert_data()

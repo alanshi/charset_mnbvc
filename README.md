@@ -33,6 +33,31 @@ print(f"文件名: {file_path}, 编码: {coding_name}")
 
 ```
 
+##### 获取二进制数据编码
+```
+from charset_mnbvc import api
+
+with open("tests/fixtures/10.txt", "rb") as f:
+    data = f.read()
+    coding_name = api.from_data(data=data, mode=2)
+    print(f"数据编码: {coding_name}")
+```
+
+###### 转换二进制数据编码
+```
+from charset_mnbvc import api
+
+source_data = b'\xb5\xda\xcb\xc4\xd5\xc2' #gbk 编码
+
+ret = api.convert_encoding(
+    source_data=source_data,
+    source_encoding="gbk",
+    target_encoding="utf-8",
+)
+print(ret)
+```
+
+
 #### 编码转换使用范例:
 NOTICE: 文件默认转换为utf-8格式, 文件转换前后会将原始文件原地复制为raw格式用于备份, 并用utf-8格式覆盖原始文件, 操作流程如下:
 
