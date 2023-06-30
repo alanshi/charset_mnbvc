@@ -1,5 +1,6 @@
 import os
 import sys
+import re
 from re import compile
 
 import cchardet
@@ -18,13 +19,24 @@ from .constant import (
 re_char_check = compile(REGEX_FEATURE_ALL)
 
 
+def has_control_characters(text):
+    """
+    :param text: text
+    :return: bool
+    """
+    pattern = r'[\u0000-\u001f\u007f-\u009f]'
+    match = re.search(pattern, text)
+    return match is not None
+
+
 def from_data(data, mode) -> str:
     """
     :param data: data
     :param mode: 1: use mnbvc, 2: use cchardet
     :return: encoding
     """
-    coding_name = get_cn_charset(source_data=data, mode=mode, source_type="data")
+    coding_name = get_cn_charset(
+        source_data=data, mode=mode, source_type="data")
     return coding_name
 
 
@@ -34,7 +46,8 @@ def from_file(file_path, mode):
     :param mode: 1: use mnbvc, 2: use cchardet
     :return: encoding
     """
-    coding_name = get_cn_charset(source_data=file_path, mode=mode, source_type="file")
+    coding_name = get_cn_charset(
+        source_data=file_path, mode=mode, source_type="file")
     return file_path, coding_name
 
 
@@ -50,7 +63,8 @@ def from_dir(folder_path, mode):
     for idx in tqdm.tqdm(range(file_count), "编码检测进度"):
         file_path = files[idx]
 
-        coding_name = get_cn_charset(source_data=file_path, mode=mode, source_type="file")
+        coding_name = get_cn_charset(
+            source_data=file_path, mode=mode, source_type="file")
         if not coding_name:
             coding_name = "None"
 
@@ -161,10 +175,15 @@ def get_cn_charset(source_data, source_type="file", mode=1):
         try:
             if 'ufffd' in data.decode().encode("unicode_escape").decode():
                 return "UNKNOWN"
+
+            # if has_control_characters(data.decode("unicode_escape")):
+            #     return "UNKNOWN"
+
         except Exception as err:
             pass
 
-        encoding = check_by_mnbvc(data=data) if mode == 1 else check_by_cchardect(data=data)
+        encoding = check_by_mnbvc(
+            data=data) if mode == 1 else check_by_cchardect(data=data)
 
     except Exception as err:
         sys.stderr.write(f"Error: {str(err)}\n")
@@ -181,12 +200,14 @@ def convert_encoding(source_data, source_encoding, target_encoding="utf-8"):
     """
     try:
         data = source_data.decode(encoding=source_encoding)
-        data = data.encode(encoding=target_encoding).decode(encoding=target_encoding)
+        data = data.encode(encoding=target_encoding).decode(
+            encoding=target_encoding)
     except Exception as err:
         sys.stderr.write(f"Error: {str(err)}\n")
         data = source_data
 
     return data
+
 
 def test():
     print("test")
