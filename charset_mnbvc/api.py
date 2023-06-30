@@ -158,6 +158,12 @@ def get_cn_charset(source_data, source_type="file", mode=1):
         else:
             data = source_data
 
+        try:
+            if 'ufffd' in data.decode().encode("unicode_escape").decode():
+                return "UNKNOWN"
+        except Exception as err:
+            pass
+
         encoding = check_by_mnbvc(data=data) if mode == 1 else check_by_cchardect(data=data)
 
     except Exception as err:
