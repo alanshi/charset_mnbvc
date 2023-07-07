@@ -57,6 +57,14 @@ ret = api.convert_encoding(
 print(ret)
 ```
 
+###### 尝试修复乱码数据
+```
+from charset_mnbvc import api
+data_1 = "变巨"
+
+result_1 = api.fix_data(s=data_1)
+print(f"修复测试1: {result_1}")
+```
 
 #### 编码转换使用范例:
 NOTICE: 文件默认转换为utf-8格式, 文件转换前后会将原始文件原地复制为raw格式用于备份, 并用utf-8格式覆盖原始文件, 操作流程如下:
