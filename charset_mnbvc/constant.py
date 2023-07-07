@@ -20,7 +20,19 @@ ENCODINGS = [
     'utf_8',
     'utf_16',
     'gb18030',
-    'big5'
+    'big5',
+]
+
+EXT_ENCODING = [
+    'utf-8',
+    'gbk', # 简体中文 (GB2312)
+    'gb18030', # 简体中文 (GB2312)
+    'BIG5', # 繁体中文 (BIG5)
+    'shift_jis', # 日本語 (cp932)
+    'euc_kr', # 한국어 (cp949)
+    'ascii', # ASCII
+    'utf_16', # Unicode (UTF-16)
+    'cp1252', # Western European (Windows)
 ]
 
 CCHARDECT_ENCODING_MAP = {
@@ -70,4 +82,3 @@ CCHARDECT_ENCODING_MAP = {
     "IBM855": "ibm855",
     "M": "m"
 }
-

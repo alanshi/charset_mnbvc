@@ -11,6 +11,7 @@ from .constant import (
     REGEX_FEATURE,
     CHUNK_SIZE,
     ENCODINGS,
+    EXT_ENCODING,
     CCHARDECT_ENCODING_MAP
 )
 
@@ -27,6 +28,26 @@ def has_control_characters(text):
     pattern = r'[\u0000-\u001f\u007f-\u009f]'
     match = re.search(pattern, text)
     return match is not None
+
+
+def fix_data(s: str) -> list:
+    """
+    :param s: text
+    :return: list
+    """
+
+    result = []
+
+    for item in EXT_ENCODING:
+        guess_text = s.encode(encoding=item, errors='replace')
+        for target in EXT_ENCODING:
+            if item == target:
+                continue
+            fixed_text = guess_text.decode(encoding=target, errors='replace')
+            dic = {"origin": s, "guess": fixed_text, "from": item, "to": target}
+            result.append(dic)
+
+    return result
 
 
 def from_data(data, mode) -> str:
