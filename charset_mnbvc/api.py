@@ -188,15 +188,22 @@ def get_cn_charset(source_data, source_type="file", mode=1):
         if source_type == "file":
             with open(source_data, 'rb') as fp:
                 data = fp.read()
+
                 if not data:
-                    return "Empty File"
+                    return None
         else:
             data = source_data
 
         try:
+
+            # 内容中是否包含 null 字符（二进制文件通常包含 null 字符）
+            # if b'\x00' in data:
+            #     return None
+
             if 'ufffd' in data.decode().encode("unicode_escape").decode():
                 return "UNKNOWN"
 
+            # 内容是否包含 unicode控制符
             # if has_control_characters(data.decode("unicode_escape")):
             #     return "UNKNOWN"
 
@@ -224,8 +231,18 @@ def convert_encoding(source_data, source_encoding, target_encoding="utf-8"):
         data = data.encode(encoding=target_encoding).decode(
             encoding=target_encoding)
     except Exception as err:
-        sys.stderr.write(f"Error: {str(err)}\n")
-        data = source_data
+        if source_encoding == "big5":
+            try:
+                source_encoding = "cp950"
+                data = source_data.decode(encoding=source_encoding)
+                data = data.encode(encoding=target_encoding).decode(
+                    encoding=target_encoding)
+            except Exception as err:
+                sys.stderr.write(f"Error: {str(err)}\n")
+                data = source_data
+        else:
+            sys.stderr.write(f"Error: {str(err)}\n")
+            data = source_data
 
     return data
 
