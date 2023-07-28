@@ -21,6 +21,7 @@ ENCODINGS = [
     'utf_16',
     'gb18030',
     'big5',
+    'gb2312'
 ]
 
 EXT_ENCODING = [

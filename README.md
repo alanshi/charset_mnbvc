@@ -64,6 +64,23 @@ data_1 = "变巨"
 
 result_1 = api.fix_data(s=data_1)
 print(f"修复测试1: {result_1}")
+
+from      | to        | origin | guess
+-----------------------------------
+utf-8     | gbk       | 变巨 | 鍙樺法
+utf-8     | gb18030   | 变巨 | 鍙樺法
+utf-8     | BIG5      | 变巨 | ���撌�
+utf-8     | shift_jis | 变巨 | 蜿伜ｷｨ
+utf-8     | euc_kr    | 变巨 | ���藥�
+utf-8     | ascii     | 变巨 | ������
+utf-8     | utf_16    | 变巨 | 迥ꢷ
+utf-8     | cp1252    | 变巨 | å�˜å·¨
+gbk       | utf-8     | 变巨 | ���
+gbk       | gb18030   | 变巨 | 变巨
+gbk       | BIG5      | 变巨 | 曹操
+gbk       | shift_jis | 变巨 | ｱ萓ﾞ
+gbk       | euc_kr    | 变巨 | 긴앵
+gbk       | ascii     | 变巨 | ����
 ```
 
 #### 编码转换使用范例:

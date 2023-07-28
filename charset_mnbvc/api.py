@@ -15,6 +15,9 @@ from .constant import (
     CCHARDECT_ENCODING_MAP
 )
 
+from .common_utils import (
+    print_table
+)
 
 # compile makes it more efficient
 re_char_check = compile(REGEX_FEATURE_ALL)
@@ -46,7 +49,7 @@ def fix_data(s: str) -> list:
             fixed_text = guess_text.decode(encoding=target, errors='replace')
             dic = {"origin": s, "guess": fixed_text, "from": item, "to": target}
             result.append(dic)
-
+    print_table(result)
     return result
 
 

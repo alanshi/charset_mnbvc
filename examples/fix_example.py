@@ -15,8 +15,5 @@ def fix_data():
     result_1 = api.fix_data(s=data_1)
     result_2 = api.fix_data(s=data_2)
 
-    print(f"修复测试1: {result_1}")
-    print(f"修复测试2: {result_2}")
-
 if __name__ == '__main__':
     fix_data()
