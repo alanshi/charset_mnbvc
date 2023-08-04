@@ -83,6 +83,17 @@ gbk       | euc_kr    | 变巨 | 긴앵
 gbk       | ascii     | 变巨 | ����
 ```
 
+###### 尝试修复乱码数据
+```
+file_path = "/Users/alan/mywork/mnbvc/tests/fixtures/errors/48.txt"
+ret, ratio = api.check_disorder_chars(file_path=file_path, threshold=0.05)
+print(f"包含乱码的字符拷锟斤等字符, 乱码比例约:{round(float(ratio)*100)}%" if ret else "未找到乱码的字符，请注意调节阈值")
+
+结果:
+包含乱码的字符拷锟斤等字符, 乱码比例约:28%
+
+```
+
 #### 编码转换使用范例:
 NOTICE: 文件默认转换为utf-8格式, 文件转换前后会将原始文件原地复制为raw格式用于备份, 并用utf-8格式覆盖原始文件, 操作流程如下:
 

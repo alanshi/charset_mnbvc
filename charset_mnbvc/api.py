@@ -8,8 +8,6 @@ import tqdm
 
 from .constant import (
     REGEX_FEATURE_ALL,
-    REGEX_FEATURE,
-    CHUNK_SIZE,
     ENCODINGS,
     EXT_ENCODING,
     CCHARDECT_ENCODING_MAP
@@ -47,7 +45,8 @@ def fix_data(s: str) -> list:
             if item == target:
                 continue
             fixed_text = guess_text.decode(encoding=target, errors='replace')
-            dic = {"origin": s, "guess": fixed_text, "from": item, "to": target}
+            dic = {"origin": s, "guess": fixed_text,
+                   "from": item, "to": target}
             result.append(dic)
     print_table(result)
     return result
@@ -154,6 +153,8 @@ def check_by_mnbvc(data):
         encoding: data.decode(encoding=encoding, errors='ignore')
         for encoding in ENCODINGS
     }
+    import pdb
+    pdb.set_trace()
 
     # regex match
     final_encodings = [
@@ -176,6 +177,21 @@ def check_by_mnbvc(data):
         final_encoding = final_encodings[0]
 
     return final_encoding
+
+
+def check_disorder_chars(file_path, threshold=0.1):
+    """
+    :param file_path: file_path
+    :param threshold: threshold
+    :return: bool
+    """
+    with open(file_path, 'rb') as fp:
+        data = fp.read()
+
+    total_chars = len(data)
+    disorder_chars = data.decode().encode("unicode_escape").decode().count('ufffd')
+    ratio = disorder_chars / total_chars
+    return ratio >= threshold, ratio
 
 
 def get_cn_charset(source_data, source_type="file", mode=1):
