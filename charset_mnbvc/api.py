@@ -25,6 +25,7 @@ def has_control_characters(text):
     """
     :param text: text
     :return: bool
+    :ref: https://www.fileformat.info/info/unicode/category/Cc/list.htm
     """
     pattern = r'[\u0000-\u001f\u007f-\u009f]'
     match = re.search(pattern, text)
