@@ -83,7 +83,7 @@ gbk       | euc_kr    | 变巨 | 긴앵
 gbk       | ascii     | 变巨 | ����
 ```
 
-###### 尝试修复乱码数据
+###### 乱码比例检测工具
 ```
 file_path = "/Users/alan/mywork/mnbvc/tests/fixtures/errors/48.txt"
 ret, ratio = api.check_disorder_chars(file_path=file_path, threshold=0.05)
