@@ -5,7 +5,9 @@ venv
 .idea/
 charset_mnbvc.egg-info
 pypi_upload.sh
-tests
+tests/local/*
 __pycache__/
 check_result.csv
 dist
+out/
+.VSCodeCounter/

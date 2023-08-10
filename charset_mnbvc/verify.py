@@ -1,5 +1,5 @@
-import os
 import sys
+
 from tqdm import tqdm
 
 from .common_utils import get_file_paths
@@ -30,5 +30,5 @@ def process(dir_path: any) -> any:
     return True
 
 if __name__ == '__main__':
-    dir_path = '/Users/alan/databak/mop'
-    process(dir_path)
+    path = '/Users/alan/databak/mop'
+    process(path)

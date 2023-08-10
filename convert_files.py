@@ -1,15 +1,14 @@
-import os
-import sys
-import csv
-import shutil
-from pathlib import Path
 import argparse
+import csv
+import os
+import shutil
+import sys
 from concurrent.futures import ProcessPoolExecutor
+from pathlib import Path
 
 from tqdm import tqdm
 
-from charset_mnbvc import api
-from charset_mnbvc import verify
+from charset_mnbvc import api, verify
 
 BLOCK_SIZE = 1024 * 1024
 

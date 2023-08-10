@@ -6,7 +6,6 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from charset_mnbvc import api
 
 
-
 def detect_file():
     """
     Detect file encoding

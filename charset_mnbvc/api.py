@@ -1,21 +1,14 @@
 import os
-import sys
 import re
+import sys
 from re import compile
 
 import cchardet
 import tqdm
 
-from .constant import (
-    REGEX_FEATURE_ALL,
-    ENCODINGS,
-    EXT_ENCODING,
-    CCHARDECT_ENCODING_MAP
-)
-
-from .common_utils import (
-    print_table
-)
+from .common_utils import print_table
+from .constant import (CCHARDECT_ENCODING_MAP, ENCODINGS, EXT_ENCODING,
+                       REGEX_FEATURE_ALL)
 
 # compile makes it more efficient
 re_char_check = compile(REGEX_FEATURE_ALL)
