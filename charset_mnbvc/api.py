@@ -147,8 +147,6 @@ def check_by_mnbvc(data):
         encoding: data.decode(encoding=encoding, errors='ignore')
         for encoding in ENCODINGS
     }
-    import pdb
-    pdb.set_trace()
 
     # regex match
     final_encodings = [
