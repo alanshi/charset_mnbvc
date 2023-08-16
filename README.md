@@ -28,7 +28,7 @@ for result in results:
 from charset_mnbvc import api
 
 file_path = "test.txt"
-coding_name = get_cn_charset(file_path)
+coding_name = api.get_cn_charset(file_path)
 print(f"文件名: {file_path}, 编码: {coding_name}")
 
 ```
