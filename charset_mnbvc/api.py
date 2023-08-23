@@ -136,7 +136,7 @@ def check_by_cchardect(data):
     return converted_encoding
 
 
-def check_by_mnbvc(data):
+def check_by_mnbvc(data, special_encodings=None):
     """
     :param data: data
     :return: encoding
@@ -159,15 +159,12 @@ def check_by_mnbvc(data):
         # try to use cchardet if the normal decoding does not work
         final_encodings = [check_by_cchardect(data=data)]
 
-    if len(final_encodings) > 1:
-        if "utf_8" in final_encodings:
-            final_encoding = "utf_8"
+    if special_encodings:
+        lower_special_encodings = [x.lower() for x in special_encodings]
+        final_encodings = list(set(final_encodings) &
+                               set(lower_special_encodings))
 
-        if "utf_16" in final_encodings:
-            final_encoding = "utf_16"
-    else:
-        final_encoding = final_encodings[0]
-
+    final_encoding = final_encodings[0] if final_encodings else None
     return final_encoding
 
 
@@ -186,7 +183,7 @@ def check_disorder_chars(file_path, threshold=0.1):
     return ratio >= threshold, ratio
 
 
-def get_cn_charset(source_data, source_type="file", mode=1):
+def get_cn_charset(source_data, source_type="file", mode=1, special_encodings=None):
     """
     :param source_data: file path
     :param mode: 1: use mnbvc, 2: use cchardet
@@ -222,7 +219,7 @@ def get_cn_charset(source_data, source_type="file", mode=1):
             pass
 
         encoding = check_by_mnbvc(
-            data=data) if mode == 1 else check_by_cchardect(data=data)
+            data=data, special_encodings=special_encodings) if mode == 1 else check_by_cchardect(data=data)
 
     except Exception as err:
         sys.stderr.write(f"Error: {str(err)}\n")

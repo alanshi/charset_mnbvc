@@ -37,8 +37,18 @@ def detect_data():
         coding_name = api.from_data(data=data, mode=2)
         print(f"数据编码: {coding_name}")
 
+def detect_data_by_mnbvc():
+    data = b'\xd6\xa7\xb3\xc5\xb2\xc4\xc1\xcf/Code/p_3_1.m'
+    coding_name = api.get_cn_charset(
+        source_data=data,
+        source_type="data",
+        mode=1,
+        special_encodings=["gbk", "gb2312", "utf-8"]
+    )
+    print(coding_name)
 
 if __name__ == '__main__':
     detect_file()
     detect_files()
     detect_data()
+    detect_data_by_mnbvc()
