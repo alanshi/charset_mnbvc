@@ -85,6 +85,7 @@ gbk       | ascii     | 变巨 | ����
 
 ###### 乱码比例检测工具
 ```
+from charset_mnbvc import api
 file_path = "/Users/alan/mywork/mnbvc/tests/fixtures/errors/48.txt"
 ret, ratio = api.check_disorder_chars(file_path=file_path, threshold=0.05)
 print(f"包含乱码的字符拷锟斤等字符, 乱码比例约:{round(float(ratio)*100)}%" if ret else "未找到乱码的字符，请注意调节阈值")
@@ -92,6 +93,20 @@ print(f"包含乱码的字符拷锟斤等字符, 乱码比例约:{round(float(ra
 结果:
 包含乱码的字符拷锟斤等字符, 乱码比例约:28%
 
+```
+
+###### 指定检测编码范围
+某些情况下，我们希望编码检测时只输出我们预期的编码格式，即可采用这种方法（目前仅对mode=1 有效），设计本模式的原因是大多数情况下，短文本的编码无法被正确的被识别出，可能会误报，本来是gbk的编码可能会误报为utf-8或者是别的编码。详情请查看 https://wiki.mnbvc.org/doku.php/%E7%9F%AD%E6%96%87%E6%9C%AC%E6%97%A0%E6%B3%95%E6%AD%A3%E7%A1%AE%E6%A3%80%E6%B5%8B%E7%BC%96%E7%A0%81%E7%9A%84%E9%97%AE%E9%A2%98
+```
+from charset_mnbvc import api
+data = b'\xd6\xa7\xb3\xc5\xb2\xc4\xc1\xcf/Code/p_3_1.m'
+coding_name = api.get_cn_charset(
+    source_data=data,
+    source_type="data",
+    mode=1,
+    special_encodings=["gbk"]
+)
+print(coding_name)
 ```
 
 #### 编码转换使用范例:
