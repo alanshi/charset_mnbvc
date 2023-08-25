@@ -109,6 +109,19 @@ coding_name = api.get_cn_charset(
 print(coding_name)
 ```
 
+#### 测试数据:
+开发测试时 请参考 tests/fixtures里的所有文本数据进行测试，或者使用更多的数据样本进行测试，以下是数据样本网盘地址：
+
+1_dir_need_check.zip 9.94GB，原始22.98GB
+[百度网盘](https://pan.baidu.com/s/1IitNwAIbeZH9-Ah5eGCHfA?pwd=49yc)
+
+20221224.zip 压缩包4.57GB，原始13.45GB
+[百度网盘](https://pan.baidu.com/s/19DWSU68IukKWQqoEgjuVRQ?pwd=dh2n)
+
+20221225.zip 压缩包7.53GB，原始17.68GB
+[百度网盘](https://pan.baidu.com/s/1nTVNwayGfon8-R87TuCYfQ?pwd=76jy)
+
+
 #### 编码转换使用范例:
 NOTICE: 文件默认转换为utf-8格式, 文件转换前后会将原始文件原地复制为raw格式用于备份, 并用utf-8格式覆盖原始文件, 操作流程如下:
 
