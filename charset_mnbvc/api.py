@@ -217,7 +217,7 @@ def get_cn_charset(source_data, source_type="file", mode=1, special_encodings=No
 
         except Exception as err:
             pass
-
+        # TODO mode3，启用pyicu的编码检测
         encoding = check_by_mnbvc(
             data=data, special_encodings=special_encodings) if mode == 1 else check_by_cchardect(data=data)
 
@@ -239,6 +239,7 @@ def convert_encoding(source_data, source_encoding, target_encoding="utf-8"):
         data = data.encode(encoding=target_encoding).decode(
             encoding=target_encoding)
     except Exception as err:
+        #todo 启动 pyicu的转换
         if source_encoding == "big5":
             try:
                 source_encoding = "cp950"

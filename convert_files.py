@@ -103,6 +103,7 @@ def convert_file_to_utf8(file):
                 f_out.write(f_in.read())
 
     except Exception as e:
+        # TODO 检测encoding是否为gbk或者gb18030，调用pyicu进行转换
         msg = f"{file_path} {encoding} 转换到utf8失败, {e}"
         os.remove(file_path)
         return False, msg

@@ -112,6 +112,9 @@ print(coding_name)
 #### 测试数据:
 开发测试时 请参考 tests/fixtures里的所有文本数据进行测试，或者使用更多的数据样本进行测试，以下是数据样本网盘地址：
 
+20230101.zip 压缩包7.34GB，原始17.11GB
+[百度网盘]https://pan.baidu.com/s/1TLEkczf5_pQlWcXwLPPcEw?pwd=78uq
+
 1_dir_need_check.zip 9.94GB，原始22.98GB
 [百度网盘](https://pan.baidu.com/s/1IitNwAIbeZH9-Ah5eGCHfA?pwd=49yc)
 
@@ -138,7 +141,8 @@ optional arguments:
   -h, --help            show this help message and exit
   -p PROCESS_NUM, --process_num PROCESS_NUM
                         指定进程数，默认为4
-  -c, --cchardet        使用cchardet方案
+  -c, --cchardet        使用cchardet方案,
+  -m, --mode            mode=1 cchardet(默认), mode=2 mnbvc方案,,mode3=3 pyicu
   -i inputDirectory     inputDirectory为需要检测的目录
   -step PROCESS_STEP    执行步骤,1为编码检测,2为编码转换
   -r result_file_name   指定编码检测结果文件名
