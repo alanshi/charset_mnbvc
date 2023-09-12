@@ -113,7 +113,7 @@ print(coding_name)
 开发测试时 请参考 tests/fixtures里的所有文本数据进行测试，或者使用更多的数据样本进行测试，以下是数据样本网盘地址：
 
 20230101.zip 压缩包7.34GB，原始17.11GB
-[百度网盘]https://pan.baidu.com/s/1TLEkczf5_pQlWcXwLPPcEw?pwd=78uq
+[百度网盘](https://pan.baidu.com/s/1TLEkczf5_pQlWcXwLPPcEw?pwd=78uq)
 
 1_dir_need_check.zip 9.94GB，原始22.98GB
 [百度网盘](https://pan.baidu.com/s/1IitNwAIbeZH9-Ah5eGCHfA?pwd=49yc)
