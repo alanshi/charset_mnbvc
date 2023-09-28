@@ -10,6 +10,8 @@ from .common_utils import print_table
 from .constant import (CCHARDECT_ENCODING_MAP, ENCODINGS, EXT_ENCODING,
                        REGEX_FEATURE_ALL)
 
+import icu
+
 # compile makes it more efficient
 re_char_check = compile(REGEX_FEATURE_ALL)
 
@@ -114,6 +116,16 @@ def scan_dir(folder_path, ext='.txt'):
         files.extend(f)
     return sub_folders, files
 
+def check_by_icu(data):
+    """
+    :param data:data
+    :return: encoding
+    """
+    encoding = icu.CharsetDetector(data).detect().getName()
+
+    converted_encoding = CCHARDECT_ENCODING_MAP.get(encoding)
+
+    return converted_encoding
 
 def check_by_cchardect(data):
     """
@@ -218,8 +230,14 @@ def get_cn_charset(source_data, source_type="file", mode=1, special_encodings=No
         except Exception as err:
             pass
         # TODO mode3，启用pyicu的编码检测
-        encoding = check_by_mnbvc(
-            data=data, special_encodings=special_encodings) if mode == 1 else check_by_cchardect(data=data)
+        if mode == 1:
+            encoding = check_by_mnbvc(data=data, special_encodings=special_encodings)
+        elif mode == 2:
+            encoding = check_by_cchardect(data=data)
+        elif mode == 3:
+            encoding = check_by_icu(data=data)
+        else:
+            sys.stderr.write(f'Error: mode {mode} is not supported.')
 
     except Exception as err:
         sys.stderr.write(f"Error: {str(err)}\n")
