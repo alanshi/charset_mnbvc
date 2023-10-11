@@ -30,12 +30,11 @@ def parse_args():
         help='指定进程数，默认为4'
     )
     parser.add_argument(
-        '-c', '--cchardet',
-        action='store_const',
-        default=2,
-        const=2,
+        '-m', '--mode',
+        default=1,
+        type=int,
         dest='mode',
-        help='使用cchardet方案'
+        help='mode=1 cchardet(默认), mode=2 mnbvc方案, mode=3 pyicu'
     )
     parser.add_argument(
         '-i',
@@ -116,11 +115,12 @@ def convert_file_to_utf8(file):
     except Exception as e:
         # 检测encoding是否为gbk或者gb18030，调用pyicu进行转换
         msg = f"{file_path} {encoding} 转换到utf8失败, {e}"
-        if encoding == 'gb18030' or encoding == 'gbk':
+        if encoding.lower() in ["gbk", "gb18030"]:
             try:
-                with open(raw_file_path, "rb") as f:
-                    data = f.read()
-                    encoding = api.from_data(data=data, mode=3)
+                # encoding = "GBK"
+                # with open(raw_file_path, "rb") as f:
+                #     data = f.read()
+                #     encoding = api.from_data(data=data, mode=3)
 
                 convert_file_to_utf8_use_icu(raw_file_path, file_path, encoding)
                 msg = msg + f" 重新转换 {encoding}，使用 icu 成功"
