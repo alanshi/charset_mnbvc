@@ -26,4 +26,9 @@ setup(
         "Bug Reports": "https://github.com/alanshi/charset_mnbvc/issues",
         "Source": "https://github.com/alanshi/charset_mnbvc/",
     },
+    install_requires=[
+        'cchardet',
+        'tqdm',
+        'PyICU'
+    ],
 )
