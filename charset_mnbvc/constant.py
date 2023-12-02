@@ -1,6 +1,15 @@
 # read file in chunks
 CHUNK_SIZE = 2500
 
+# 编码报错提示上下文范围
+TIPS_CONTEXT_RANGE = 5
+
+# 中文字符编码最大字节数
+MAX_ENCODING_SIZE = 4
+
+# 错误编码最大字节数,最小6个字符,最大24个字符
+MAX_INVALID_BYTES_SIZE = 24
+
 # 正则判断中文标点符号,标点符号包含 。 ； ， ： “ ”（ ） 、 ？ 《 》 空格
 REGEX_FEATURE = r'[\u3002\uff1b\uff0c\uff1a\u201c\u201d\uff08\uff09\u3001\uff1f\u300a\u300b\u3000]'
 
@@ -27,14 +36,14 @@ ENCODINGS = [
 
 EXT_ENCODING = [
     'utf-8',
-    'gbk', # 简体中文 (GB2312)
-    'gb18030', # 简体中文 (GB2312)
-    'BIG5', # 繁体中文 (BIG5)
-    'shift_jis', # 日本語 (cp932)
-    'euc_kr', # 한국어 (cp949)
-    'ascii', # ASCII
-    'utf_16', # Unicode (UTF-16)
-    'cp1252', # Western European (Windows)
+    'gbk',  # 简体中文 (GB2312)
+    'gb18030',  # 简体中文 (GB2312)
+    'BIG5',  # 繁体中文 (BIG5)
+    'shift_jis',  # 日本語 (cp932)
+    'euc_kr',  # 한국어 (cp949)
+    'ascii',  # ASCII
+    'utf_16',  # Unicode (UTF-16)
+    'cp1252',  # Western European (Windows)
 ]
 
 CCHARDECT_ENCODING_MAP = {
