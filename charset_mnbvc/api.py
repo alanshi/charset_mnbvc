@@ -8,7 +8,7 @@ import tqdm
 
 from .common_utils import print_table
 from .constant import (CCHARDECT_ENCODING_MAP, ENCODINGS, EXT_ENCODING,
-                       REGEX_FEATURE_ALL)
+                       REGEX_FEATURE_ALL, TIPS_CONTEXT_RANGE, MAX_ENCODING_SIZE, MAX_INVALID_BYTES_SIZE)
 
 import icu
 
@@ -116,6 +116,7 @@ def scan_dir(folder_path, ext='.txt'):
         files.extend(f)
     return sub_folders, files
 
+
 def check_by_icu(data):
     """
     :param data:data
@@ -126,6 +127,7 @@ def check_by_icu(data):
     converted_encoding = CCHARDECT_ENCODING_MAP.get(encoding)
 
     return converted_encoding
+
 
 def check_by_cchardect(data):
     """
@@ -257,7 +259,7 @@ def convert_encoding(source_data, source_encoding, target_encoding="utf-8"):
         data = data.encode(encoding=target_encoding).decode(
             encoding=target_encoding)
     except Exception as err:
-        #todo 启动 pyicu的转换
+        # todo 启动 pyicu的转换
         if source_encoding == "big5":
             try:
                 source_encoding = "cp950"
@@ -272,6 +274,58 @@ def convert_encoding(source_data, source_encoding, target_encoding="utf-8"):
             data = source_data
 
     return data
+
+
+def find_invalid_bytes(byte_sequence: bytes, decoding="gbk"):
+    """
+    :param byte_sequence: input bytes
+    :param decoding: input decoding
+    :return:
+    """
+    try:
+        byte_sequence.decode(decoding)
+        print("No decoding errors found, the byte sequence is valid.")
+    except UnicodeDecodeError as e:
+        # 解码左侧有效字符
+        invalid_bytes = byte_sequence[e.start:e.end]
+        left_chars = ''
+        index_offset = TIPS_CONTEXT_RANGE
+        while len(left_chars) < TIPS_CONTEXT_RANGE:
+            index_offset += 1
+            if e.start - index_offset < 0:
+                left_chars = byte_sequence[:e.start].decode(decoding)
+                break
+            try:
+                left_chars = byte_sequence[e.start - index_offset:e.start].decode(decoding)
+            except UnicodeDecodeError as _:
+                pass
+        # 解码右侧有效字符
+        right_chars = ''
+        right_curr_index = e.end
+        index_offset = TIPS_CONTEXT_RANGE
+        while len(right_chars) < TIPS_CONTEXT_RANGE:
+            index_offset += 1
+            if right_curr_index + index_offset >= len(byte_sequence):
+                break
+            try:
+                right_chars = byte_sequence[right_curr_index: right_curr_index + index_offset].decode(decoding)
+            except UnicodeDecodeError as right_e:
+                # 超过提示上下文最大字节数时，更新异常字节的边界
+                if index_offset >= MAX_ENCODING_SIZE * TIPS_CONTEXT_RANGE:
+                    invalid_bytes += byte_sequence[right_curr_index:right_curr_index + right_e.end]
+                    right_curr_index += right_e.end
+                    index_offset = TIPS_CONTEXT_RANGE
+                    # 超过最大异常字节数时，放弃解码右侧字符
+                    if len(invalid_bytes) >= MAX_INVALID_BYTES_SIZE:
+                        right_chars = ''
+                        break
+        print(f"Error message: {e}")
+        if right_chars and e.end + len(invalid_bytes) != len(byte_sequence):
+            # 异常字节输出格式化
+            invalid_str = f"'{' '.join([hex(b)[2:].zfill(2) for b in invalid_bytes])}'"
+            print(f"There are invalid bytes in the string: {left_chars + invalid_str + right_chars}")
+        else:  # 超过最大异常字节数，提示更换解码方式
+            print(f"There are too many invalid bytes, please change codec.")
 
 
 def test():
