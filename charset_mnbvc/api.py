@@ -26,6 +26,20 @@ def has_control_characters(text):
     match = re.search(pattern, text)
     return match is not None
 
+def is_perceivable(s):
+    """
+    Checks if all characters in a string are perceivable by the user. 
+    Perceivable characters include printable characters, spaces, tabs, and newlines.
+    
+    :param s:str The string to check.    
+    :return: bool True if all characters are perceivable, False otherwise.
+    """
+    for char in s:
+        # Check if the character is not perceivable
+        if not (char.isprintable() or char in [' ', '\t', '\n']):
+            return char.encode('unicode_escape').decode()
+    return True
+
 
 def fix_data(s: str) -> list:
     """
@@ -228,6 +242,11 @@ def get_cn_charset(source_data, source_type="file", mode=1, special_encodings=No
             # 内容是否包含 unicode控制符
             # if has_control_characters(data.decode("unicode_escape")):
             #     return "UNKNOWN"
+            
+            # 检测内容是否包含视觉不可感知的字符
+            # return_is_perceivable = is_perceivable(data.decode("unicode_escape"))
+            # if return_is_perceivable != True:
+            #     return "UNKNOWN: %s" % return_is_perceivable
 
         except Exception as err:
             pass
