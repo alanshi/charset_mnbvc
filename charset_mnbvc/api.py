@@ -8,7 +8,7 @@ import tqdm
 
 from .common_utils import print_table
 from .constant import (CCHARDECT_ENCODING_MAP, ENCODINGS, EXT_ENCODING,
-                       REGEX_FEATURE_ALL, TIPS_CONTEXT_RANGE, MAX_ENCODING_SIZE, MAX_INVALID_BYTES_SIZE)
+                       REGEX_FEATURE_ALL)
 
 import icu
 
@@ -25,20 +25,6 @@ def has_control_characters(text):
     pattern = r'[\u0000-\u001f\u007f-\u009f]'
     match = re.search(pattern, text)
     return match is not None
-
-def is_perceivable(s):
-    """
-    Checks if all characters in a string are perceivable by the user. 
-    Perceivable characters include printable characters, spaces, tabs, and newlines.
-    
-    :param s:str The string to check.    
-    :return: bool True if all characters are perceivable, False otherwise.
-    """
-    for char in s:
-        # Check if the character is not perceivable
-        if not (char.isprintable() or char in [' ', '\t', '\n']):
-            return char.encode('unicode_escape').decode()
-    return True
 
 
 def fix_data(s: str) -> list:
@@ -65,7 +51,7 @@ def fix_data(s: str) -> list:
 def from_data(data, mode) -> str:
     """
     :param data: data
-    :param mode: 1: use mnbvc, 2: use cchardet
+    :param mode: 1:cchardet 2:mnbvc, 3:icu
     :return: encoding
     """
     coding_name = get_cn_charset(
@@ -130,7 +116,6 @@ def scan_dir(folder_path, ext='.txt'):
         files.extend(f)
     return sub_folders, files
 
-
 def check_by_icu(data):
     """
     :param data:data
@@ -141,7 +126,6 @@ def check_by_icu(data):
     converted_encoding = CCHARDECT_ENCODING_MAP.get(encoding)
 
     return converted_encoding
-
 
 def check_by_cchardect(data):
     """
@@ -242,19 +226,14 @@ def get_cn_charset(source_data, source_type="file", mode=1, special_encodings=No
             # 内容是否包含 unicode控制符
             # if has_control_characters(data.decode("unicode_escape")):
             #     return "UNKNOWN"
-            
-            # 检测内容是否包含视觉不可感知的字符
-            # return_is_perceivable = is_perceivable(data.decode("unicode_escape"))
-            # if return_is_perceivable != True:
-            #     return "UNKNOWN: %s" % return_is_perceivable
 
         except Exception as err:
             pass
-        # TODO mode3，启用pyicu的编码检测
+
         if mode == 1:
-            encoding = check_by_mnbvc(data=data, special_encodings=special_encodings)
+            encoding = check_by_cchardect(data=data, special_encodings=special_encodings)
         elif mode == 2:
-            encoding = check_by_cchardect(data=data)
+            encoding = check_by_mnbvc(data=data)
         elif mode == 3:
             encoding = check_by_icu(data=data)
         else:
@@ -278,7 +257,6 @@ def convert_encoding(source_data, source_encoding, target_encoding="utf-8"):
         data = data.encode(encoding=target_encoding).decode(
             encoding=target_encoding)
     except Exception as err:
-        # todo 启动 pyicu的转换
         if source_encoding == "big5":
             try:
                 source_encoding = "cp950"
@@ -293,58 +271,6 @@ def convert_encoding(source_data, source_encoding, target_encoding="utf-8"):
             data = source_data
 
     return data
-
-
-def find_invalid_bytes(byte_sequence: bytes, decoding="gbk"):
-    """
-    :param byte_sequence: input bytes
-    :param decoding: input decoding
-    :return:
-    """
-    try:
-        byte_sequence.decode(decoding)
-        print("No decoding errors found, the byte sequence is valid.")
-    except UnicodeDecodeError as e:
-        # 解码左侧有效字符
-        invalid_bytes = byte_sequence[e.start:e.end]
-        left_chars = ''
-        index_offset = TIPS_CONTEXT_RANGE
-        while len(left_chars) < TIPS_CONTEXT_RANGE:
-            index_offset += 1
-            if e.start - index_offset < 0:
-                left_chars = byte_sequence[:e.start].decode(decoding)
-                break
-            try:
-                left_chars = byte_sequence[e.start - index_offset:e.start].decode(decoding)
-            except UnicodeDecodeError as _:
-                pass
-        # 解码右侧有效字符
-        right_chars = ''
-        right_curr_index = e.end
-        index_offset = TIPS_CONTEXT_RANGE
-        while len(right_chars) < TIPS_CONTEXT_RANGE:
-            index_offset += 1
-            if right_curr_index + index_offset >= len(byte_sequence):
-                break
-            try:
-                right_chars = byte_sequence[right_curr_index: right_curr_index + index_offset].decode(decoding)
-            except UnicodeDecodeError as right_e:
-                # 超过提示上下文最大字节数时，更新异常字节的边界
-                if index_offset >= MAX_ENCODING_SIZE * TIPS_CONTEXT_RANGE:
-                    invalid_bytes += byte_sequence[right_curr_index:right_curr_index + right_e.end]
-                    right_curr_index += right_e.end
-                    index_offset = TIPS_CONTEXT_RANGE
-                    # 超过最大异常字节数时，放弃解码右侧字符
-                    if len(invalid_bytes) >= MAX_INVALID_BYTES_SIZE:
-                        right_chars = ''
-                        break
-        print(f"Error message: {e}")
-        if right_chars and e.end + len(invalid_bytes) != len(byte_sequence):
-            # 异常字节输出格式化
-            invalid_str = f"'{' '.join([hex(b)[2:].zfill(2) for b in invalid_bytes])}'"
-            print(f"There are invalid bytes in the string: {left_chars + invalid_str + right_chars}")
-        else:  # 超过最大异常字节数，提示更换解码方式
-            print(f"There are too many invalid bytes, please change codec.")
 
 
 def test():
