@@ -198,7 +198,7 @@ def check_disorder_chars(file_path, threshold=0.1):
 def get_cn_charset(source_data, source_type="file", mode=1, special_encodings=None):
     """
     :param source_data: file path
-    :param mode: 1: use mnbvc, 2: use cchardet
+    :param mode: 1: mnbvc, 2: cchardet, 3: icu
     :param source_type: file or data
     :return: encoding
     """
@@ -231,9 +231,9 @@ def get_cn_charset(source_data, source_type="file", mode=1, special_encodings=No
             pass
 
         if mode == 1:
-            encoding = check_by_cchardect(data=data, special_encodings=special_encodings)
+            encoding = check_by_mnbvc(data=data, special_encodings=special_encodings)
         elif mode == 2:
-            encoding = check_by_mnbvc(data=data)
+            encoding = check_by_cchardect(data=data)
         elif mode == 3:
             encoding = check_by_icu(data=data)
         else:

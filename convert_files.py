@@ -31,10 +31,10 @@ def parse_args():
     )
     parser.add_argument(
         '-m', '--mode',
-        default=1,
+        default=2,
         type=int,
         dest='mode',
-        help='mode=1 cchardet(默认), mode=2 mnbvc方案, mode=3 pyicu'
+        help='mode=1 mnbvc, mode=2 ccharde(默认), mode=3 pyicu'
     )
     parser.add_argument(
         '-i',
