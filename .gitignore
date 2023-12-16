@@ -11,3 +11,4 @@ check_result.csv
 dist
 out/
 .VSCodeCounter/
+.python-version

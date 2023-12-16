@@ -248,7 +248,7 @@ def get_cn_charset(source_data, source_type="file", mode=1, special_encodings=No
             #     return "UNKNOWN"
 
             # return_is_perceivable = is_perceivable(data.decode("unicode_escape"))
-            # if return_is_perceivable:
+            # if not return_is_perceivable:
             #     return "UNKNOWN: %s" % return_is_perceivable
 
         except Exception as err:
