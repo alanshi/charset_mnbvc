@@ -10,7 +10,6 @@ from .common_utils import print_table
 from .constant import (CCHARDECT_ENCODING_MAP, ENCODINGS, EXT_ENCODING,
                        REGEX_FEATURE_ALL, TIPS_CONTEXT_RANGE, MAX_ENCODING_SIZE, MAX_INVALID_BYTES_SIZE)
 
-import icu
 
 # compile makes it more efficient
 re_char_check = compile(REGEX_FEATURE_ALL)
@@ -69,7 +68,7 @@ def fix_data(s: str) -> list:
 def from_data(data, mode) -> str:
     """
     :param data: data
-    :param mode: 1:cchardet 2:mnbvc, 3:icu
+    :param mode: 1:cchardet 2:mnbvc
     :return: encoding
     """
     coding_name = get_cn_charset(
@@ -135,16 +134,16 @@ def scan_dir(folder_path, ext='.txt'):
     return sub_folders, files
 
 
-def check_by_icu(data):
-    """
-    :param data:data
-    :return: encoding
-    """
-    encoding = icu.CharsetDetector(data).detect().getName()
+# def check_by_icu(data):
+#     """
+#     :param data:data
+#     :return: encoding
+#     """
+#     encoding = icu.CharsetDetector(data).detect().getName()
 
-    converted_encoding = CCHARDECT_ENCODING_MAP.get(encoding)
+#     converted_encoding = CCHARDECT_ENCODING_MAP.get(encoding)
 
-    return converted_encoding
+#     return converted_encoding
 
 
 def check_by_cchardect(data):
@@ -218,7 +217,7 @@ def check_disorder_chars(file_path, threshold=0.1):
 def get_cn_charset(source_data, source_type="file", mode=1, special_encodings=None):
     """
     :param source_data: file path
-    :param mode: 1: mnbvc, 2: cchardet, 3: icu
+    :param mode: 1: mnbvc, 2: cchardet
     :param source_type: file or data
     :return: encoding
     """
@@ -259,8 +258,6 @@ def get_cn_charset(source_data, source_type="file", mode=1, special_encodings=No
                 data=data, special_encodings=special_encodings)
         elif mode == 2:
             encoding = check_by_cchardect(data=data)
-        elif mode == 3:
-            encoding = check_by_icu(data=data)
         else:
             sys.stderr.write(f'Error: mode {mode} is not supported.')
 

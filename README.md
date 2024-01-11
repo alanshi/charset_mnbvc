@@ -142,7 +142,7 @@ optional arguments:
   -p PROCESS_NUM, --process_num PROCESS_NUM
                         指定进程数，默认为4
   -c, --cchardet        使用cchardet方案,
-  -m, --mode            mode=1 mnbvc方案 , mode=2 cchardet方案(默认), mode3=3 pyicu
+  -m, --mode            mode=1 mnbvc方案 , mode=2 cchardet方案(默认)
   -i inputDirectory     inputDirectory为需要检测的目录
   -step PROCESS_STEP    执行步骤,1为编码检测,2为编码转换
   -r result_file_name   指定编码检测结果文件名

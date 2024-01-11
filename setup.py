@@ -27,7 +27,7 @@ setup(
         "Source": "https://github.com/alanshi/charset_mnbvc/",
     },
     install_requires=[
-        'cchardet',
+        'faust-cchardet',
         'tqdm'
     ],
 )

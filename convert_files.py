@@ -9,7 +9,7 @@ from pathlib import Path
 from tqdm import tqdm
 
 from charset_mnbvc import api, verify
-from icu import UnicodeString
+# from icu import UnicodeString
 
 BLOCK_SIZE = 1024 * 1024
 
@@ -82,15 +82,15 @@ def revert_files(file_path):
 
     return True
 
-def convert_file_to_utf8_use_icu(input_file, output_file, encoding):
-        # 打开二进制文件进行读取
-    with open(input_file, "rb") as f_input:
-        with open(output_file, "w") as f_output:
-            data = f_input.read()
-            # 将读取的数据转换为UTF-8编码
-            utf8_data = UnicodeString(data, encoding.upper())
-            # 将转换后的UTF-8数据写入输出文件
-            f_output.write(str(utf8_data))
+# def convert_file_to_utf8_use_icu(input_file, output_file, encoding):
+#         # 打开二进制文件进行读取
+#     with open(input_file, "rb") as f_input:
+#         with open(output_file, "w") as f_output:
+#             data = f_input.read()
+#             # 将读取的数据转换为UTF-8编码
+#             utf8_data = UnicodeString(data, encoding.upper())
+#             # 将转换后的UTF-8数据写入输出文件
+#             f_output.write(str(utf8_data))
 
 def convert_file_to_utf8(file):
     """
@@ -113,28 +113,28 @@ def convert_file_to_utf8(file):
                 f_out.write(f_in.read())
 
     except Exception as e:
-        # 检测encoding是否为gbk或者gb18030，调用pyicu进行转换
         msg = f"{file_path} {encoding} 转换到utf8失败, {e}"
-        if encoding.lower() in ["gbk", "gb18030"]:
-            try:
-                # encoding = "GBK"
-                # with open(raw_file_path, "rb") as f:
-                #     data = f.read()
-                #     encoding = api.from_data(data=data, mode=3)
+        os.remove(file_path)
+        return False, msg
 
-                convert_file_to_utf8_use_icu(raw_file_path, file_path, encoding)
-                msg = msg + f" 重新转换 {encoding}，使用 icu 成功"
-                return True, msg
-            except Exception as e:
-                msg = msg + f" 重新转换 {encoding}，使用 icu 失败"
-                os.remove(file_path)
-                return False, msg
-        else:
-            os.remove(file_path)
-            return False, msg
+        # 检测encoding是否为gbk或者gb18030，调用pyicu进行转换
+        # if encoding.lower() in ["gbk", "gb18030"]:
+        #     try:
+        #         # encoding = "GBK"
+        #         # with open(raw_file_path, "rb") as f:
+        #         #     data = f.read()
+        #         #     encoding = api.from_data(data=data, mode=3)
 
-        # os.remove(file_path)
-        # return False, msg
+        #         convert_file_to_utf8_use_icu(raw_file_path, file_path, encoding)
+        #         msg = msg + f" 重新转换 {encoding}，使用 icu 成功"
+        #         return True, msg
+        #     except Exception as e:
+        #         msg = msg + f" 重新转换 {encoding}，使用 icu 失败"
+        #         os.remove(file_path)
+        #         return False, msg
+        # else:
+        #     os.remove(file_path)
+        #     return False, msg
     return True, None
 
 
