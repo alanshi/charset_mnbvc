@@ -8,8 +8,7 @@ import tqdm
 
 from .common_utils import print_table
 from .constant import (CCHARDECT_ENCODING_MAP, ENCODINGS, EXT_ENCODING,
-                       REGEX_FEATURE_ALL, TIPS_CONTEXT_RANGE, MAX_ENCODING_SIZE, MAX_INVALID_BYTES_SIZE)
-
+                       REGEX_FEATURE_ALL, TIPS_CONTEXT_RANGE, MAX_INVALID_BYTES_SIZE)
 
 # compile makes it more efficient
 re_char_check = compile(REGEX_FEATURE_ALL)
@@ -167,7 +166,7 @@ def check_by_cchardect(data):
     return converted_encoding
 
 
-def check_by_mnbvc(data, special_encodings=None):
+def check_by_mnbvc(data: bytes, special_encodings=None):
     """
     :param data: data
     :return: encoding
@@ -199,7 +198,7 @@ def check_by_mnbvc(data, special_encodings=None):
     return final_encoding
 
 
-def check_disorder_chars(file_path, threshold=0.1):
+def check_disorder_chars(file_path: str, threshold=0.1):
     """
     :param file_path: file_path
     :param threshold: threshold
@@ -214,7 +213,7 @@ def check_disorder_chars(file_path, threshold=0.1):
     return ratio >= threshold, ratio
 
 
-def get_cn_charset(source_data, source_type="file", mode=1, special_encodings=None):
+def get_cn_charset(source_data: str, source_type="file", mode=1, special_encodings=None):
     """
     :param source_data: file path
     :param mode: 1: mnbvc, 2: cchardet
@@ -267,7 +266,7 @@ def get_cn_charset(source_data, source_type="file", mode=1, special_encodings=No
     return encoding
 
 
-def convert_encoding(source_data, source_encoding, target_encoding="utf-8"):
+def convert_encoding(source_data: bytes, source_encoding, target_encoding="utf-8"):
     """
     :param source_data: data
     :param source_encoding: input encoding
@@ -295,59 +294,39 @@ def convert_encoding(source_data, source_encoding, target_encoding="utf-8"):
     return data
 
 
-def find_invalid_bytes(byte_sequence: bytes, decoding="gbk"):
+def decode_check(byte_sequence: bytes, decoding="gbk") -> str:
     """
     :param byte_sequence: input bytes
     :param decoding: input decoding
-    :return:
+    :return: decoded characters
     """
     try:
-        byte_sequence.decode(decoding)
-        print("No decoding errors found, the byte sequence is valid.")
+        decode_data = byte_sequence.decode(decoding)
+        return decode_data
     except UnicodeDecodeError as e:
         # 解码左侧有效字符
         invalid_bytes = byte_sequence[e.start:e.end]
-        left_chars = ''
-        index_offset = TIPS_CONTEXT_RANGE
-        while len(left_chars) < TIPS_CONTEXT_RANGE:
-            index_offset += 1
-            if e.start - index_offset < 0:
-                left_chars = byte_sequence[:e.start].decode(decoding)
-                break
-            try:
-                left_chars = byte_sequence[e.start -
-                                           index_offset:e.start].decode(decoding)
-            except UnicodeDecodeError as _:
-                pass
+        left_chars = byte_sequence[:e.start].decode(decoding)[TIPS_CONTEXT_RANGE * -1:]
+        max_scan_bytes_size = min(MAX_INVALID_BYTES_SIZE, len(byte_sequence) - e.end)
         # 解码右侧有效字符
-        right_chars = ''
-        right_curr_index = e.end
-        index_offset = TIPS_CONTEXT_RANGE
-        while len(right_chars) < TIPS_CONTEXT_RANGE:
-            index_offset += 1
-            if right_curr_index + index_offset >= len(byte_sequence):
-                break
+        for i in range(max_scan_bytes_size):
             try:
-                right_chars = byte_sequence[right_curr_index: right_curr_index +
-                                            index_offset].decode(decoding)
+                right_chars = byte_sequence[e.end + i:].decode(decoding)[:TIPS_CONTEXT_RANGE]
+                break
             except UnicodeDecodeError as right_e:
-                # 超过提示上下文最大字节数时，更新异常字节的边界
-                if index_offset >= MAX_ENCODING_SIZE * TIPS_CONTEXT_RANGE:
-                    invalid_bytes += byte_sequence[right_curr_index:right_curr_index + right_e.end]
-                    right_curr_index += right_e.end
-                    index_offset = TIPS_CONTEXT_RANGE
-                    # 超过最大异常字节数时，放弃解码右侧字符
-                    if len(invalid_bytes) >= MAX_INVALID_BYTES_SIZE:
-                        right_chars = ''
-                        break
-        print(f"Error message: {e}")
-        if right_chars and e.end + len(invalid_bytes) != len(byte_sequence):
-            # 异常字节输出格式化
-            invalid_str = f"'{' '.join([hex(b)[2:].zfill(2) for b in invalid_bytes])}'"
-            print(
-                f"There are invalid bytes in the string: {left_chars + invalid_str + right_chars}")
+                if not right_e.start:
+                    invalid_bytes += byte_sequence[e.end + i:e.end + i + 1]
+                else:
+                    right_chars = byte_sequence[e.end + i:e.end + i + right_e.start].decode(decoding)[
+                                  :TIPS_CONTEXT_RANGE]
+                    break
         else:  # 超过最大异常字节数，提示更换解码方式
-            print(f"There are too many invalid bytes, please change codec.")
+            raise UnicodeDecodeError(decoding, invalid_bytes, e.start, e.start + len(invalid_bytes),
+                                     "There are too many invalid bytes, please change codec.")
+        # 格式化非法字节输出
+        invalid_str = "\\x" + '\\x'.join([hex(b)[2:].zfill(2) for b in invalid_bytes])
+        raise UnicodeDecodeError(decoding, invalid_bytes, e.start, e.start + len(invalid_bytes),
+                                 f"There are invalid bytes in the string \"{left_chars + invalid_str + right_chars}\"")
 
 
 def test():
