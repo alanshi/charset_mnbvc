@@ -36,6 +36,7 @@ ENCODINGS = [
 
 EXT_ENCODING = [
     'utf-8',
+    "gb2312",  # 简体中文 (GB2312)
     'gbk',  # 简体中文 (GB2312)
     'gb18030',  # 简体中文 (GB2312)
     'BIG5',  # 繁体中文 (BIG5)
