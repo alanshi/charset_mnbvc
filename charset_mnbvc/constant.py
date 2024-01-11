@@ -4,9 +4,6 @@ CHUNK_SIZE = 2500
 # 编码报错提示上下文范围
 TIPS_CONTEXT_RANGE = 5
 
-# 中文字符编码最大字节数
-MAX_ENCODING_SIZE = 4
-
 # 错误编码最大字节数,最小6个字符,最大24个字符
 MAX_INVALID_BYTES_SIZE = 24
 
