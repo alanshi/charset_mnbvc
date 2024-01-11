@@ -294,38 +294,38 @@ def convert_encoding(source_data: bytes, source_encoding, target_encoding="utf-8
     return data
 
 
-def decode_check(byte_sequence: bytes, decoding="gbk") -> str:
+def decode_check(byte_sequence: bytes, encoding="gbk") -> str:
     """
     :param byte_sequence: input bytes
-    :param decoding: input decoding
+    :param encoding: input encoding
     :return: decoded characters
     """
     try:
-        decode_data = byte_sequence.decode(decoding)
+        decode_data = byte_sequence.decode(encoding)
         return decode_data
     except UnicodeDecodeError as e:
         # 解码左侧有效字符
         invalid_bytes = byte_sequence[e.start:e.end]
-        left_chars = byte_sequence[:e.start].decode(decoding)[TIPS_CONTEXT_RANGE * -1:]
+        left_chars = byte_sequence[:e.start].decode(encoding)[TIPS_CONTEXT_RANGE * -1:]
         max_scan_bytes_size = min(MAX_INVALID_BYTES_SIZE, len(byte_sequence) - e.end)
         # 解码右侧有效字符
         for i in range(max_scan_bytes_size):
             try:
-                right_chars = byte_sequence[e.end + i:].decode(decoding)[:TIPS_CONTEXT_RANGE]
+                right_chars = byte_sequence[e.end + i:].decode(encoding)[:TIPS_CONTEXT_RANGE]
                 break
             except UnicodeDecodeError as right_e:
                 if not right_e.start:
                     invalid_bytes += byte_sequence[e.end + i:e.end + i + 1]
                 else:
-                    right_chars = byte_sequence[e.end + i:e.end + i + right_e.start].decode(decoding)[
+                    right_chars = byte_sequence[e.end + i:e.end + i + right_e.start].decode(encoding)[
                                   :TIPS_CONTEXT_RANGE]
                     break
         else:  # 超过最大异常字节数，提示更换解码方式
-            raise UnicodeDecodeError(decoding, invalid_bytes, e.start, e.start + len(invalid_bytes),
+            raise UnicodeDecodeError(encoding, invalid_bytes, e.start, e.start + len(invalid_bytes),
                                      "There are too many invalid bytes, please change codec.")
         # 格式化非法字节输出
         invalid_str = "\\x" + '\\x'.join([hex(b)[2:].zfill(2) for b in invalid_bytes])
-        raise UnicodeDecodeError(decoding, invalid_bytes, e.start, e.start + len(invalid_bytes),
+        raise UnicodeDecodeError(encoding, invalid_bytes, e.start, e.start + len(invalid_bytes),
                                  f"There are invalid bytes in the string \"{left_chars + invalid_str + right_chars}\"")
 
 
