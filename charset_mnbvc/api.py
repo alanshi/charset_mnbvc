@@ -274,16 +274,14 @@ def convert_encoding(source_data: bytes, source_encoding, target_encoding="utf-8
     :return: data
     """
     try:
-        data = source_data.decode(encoding=source_encoding)
-        data = data.encode(encoding=target_encoding).decode(
-            encoding=target_encoding)
+        data = decode_check(source_data, source_encoding)
+        data = decode_check(data.encode(encoding=target_encoding), target_encoding)
     except Exception as err:
         if source_encoding == "big5":
             try:
                 source_encoding = "cp950"
-                data = source_data.decode(encoding=source_encoding)
-                data = data.encode(encoding=target_encoding).decode(
-                    encoding=target_encoding)
+                data = decode_check(source_data, source_encoding)
+                data = decode_check(data.encode(encoding=target_encoding), target_encoding)
             except Exception as err:
                 sys.stderr.write(f"Error: {str(err)}\n")
                 data = source_data
@@ -294,14 +292,15 @@ def convert_encoding(source_data: bytes, source_encoding, target_encoding="utf-8
     return data
 
 
-def decode_check(byte_sequence: bytes, encoding="gbk") -> str:
+def decode_check(byte_sequence: bytes, encoding='utf-8', errors='strict') -> str:
     """
     :param byte_sequence: input bytes
     :param encoding: input encoding
+    :param errors: passed to bytes.decode()
     :return: decoded characters
     """
     try:
-        decode_data = byte_sequence.decode(encoding)
+        decode_data = byte_sequence.decode(encoding, errors)
         return decode_data
     except UnicodeDecodeError as e:
         # 解码左侧有效字符
