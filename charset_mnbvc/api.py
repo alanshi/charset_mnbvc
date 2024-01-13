@@ -14,7 +14,7 @@ from .constant import (CCHARDECT_ENCODING_MAP, ENCODINGS, EXT_ENCODING,
 re_char_check = compile(REGEX_FEATURE_ALL)
 
 
-def is_perceivable(s):
+def is_perceivable(s: str):
     """
     Checks if all characters in a string are perceivable by the user.
     Perceivable characters include printable characters, spaces, tabs, and newlines.
@@ -28,11 +28,11 @@ def is_perceivable(s):
     for char in s:
         # Check if the character is not perceivable
         if not (char.isprintable() or char in [' ', '\t', '\n']):
-            return char.encode('unicode_escape').decode()
+            return decode_check(char.encode('unicode_escape'))
     return True
 
 
-def has_control_characters(text):
+def has_control_characters(text: str):
     """
     :param text: text
     :return: bool
@@ -56,7 +56,7 @@ def fix_data(s: str) -> list:
         for target in EXT_ENCODING:
             if item == target:
                 continue
-            fixed_text = guess_text.decode(encoding=target, errors='replace')
+            fixed_text = decode_check(guess_text, encoding=target, errors='replace')
             dic = {"origin": s, "guess": fixed_text,
                    "from": item, "to": target}
             result.append(dic)
@@ -145,7 +145,7 @@ def scan_dir(folder_path, ext='.txt'):
 #     return converted_encoding
 
 
-def check_by_cchardect(data):
+def check_by_cchardect(data: bytes):
     """
     :param data: data
     :return: encoding
@@ -157,7 +157,7 @@ def check_by_cchardect(data):
     # if the encoding is not in the list, try to use utf-8 to decode
     if converted_encoding in ["ascii", "windows_1252", "utf_8"]:
         try:
-            ret = data.decode("utf-8")
+            ret = decode_check(data, "utf-8")
             if ret:
                 converted_encoding = "utf_8"
         except Exception as err:
@@ -174,7 +174,7 @@ def check_by_mnbvc(data: bytes, special_encodings=None):
     final_encoding = None
     # convert coding
     converted_info = {
-        encoding: data.decode(encoding=encoding, errors='ignore')
+        encoding: decode_check(data, encoding=encoding, errors='ignore')
         for encoding in ENCODINGS
     }
 
@@ -208,7 +208,7 @@ def check_disorder_chars(file_path: str, threshold=0.1):
         data = fp.read()
 
     total_chars = len(data)
-    disorder_chars = data.decode().encode("unicode_escape").decode().count('ufffd')
+    disorder_chars = decode_check(decode_check(data).encode("unicode_escape")).count('ufffd')
     ratio = disorder_chars / total_chars
     return ratio >= threshold, ratio
 
@@ -238,7 +238,7 @@ def get_cn_charset(source_data: str, source_type="file", mode=1, special_encodin
             # if b'\x00' in data:
             #     return None
 
-            if 'ufffd' in data.decode().encode("unicode_escape").decode():
+            if 'ufffd' in decode_check(decode_check(data).encode("unicode_escape")):
                 return "UNKNOWN"
 
             # 内容是否包含 unicode控制符
@@ -266,7 +266,7 @@ def get_cn_charset(source_data: str, source_type="file", mode=1, special_encodin
     return encoding
 
 
-def convert_encoding(source_data: bytes, source_encoding, target_encoding="utf-8"):
+def convert_encoding(source_data: bytes, source_encoding, target_encoding="utf-8") -> str:
     """
     :param source_data: data
     :param source_encoding: input encoding
