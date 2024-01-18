@@ -65,7 +65,7 @@ def parse_args():
         default=f'convert_result{int(time.time())}.csv',
         metavar='convert_result_file_name',
         dest='convert_result_file_name',
-        help='指定编码检测结果文件名'
+        help='指定编码转换结果文件名'
     )
     parser.add_argument(
         '-u',
