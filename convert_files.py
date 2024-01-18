@@ -126,12 +126,16 @@ def convert_file_to_utf8(file):
             read_data = f_in.read()
 
         with open(file_path, "w", encoding="utf-8") as f_out:
-            out_data = read_data.decode(encoding)
-            f_out.write(out_data)
+            flag, out_data = api.decode_check(read_data, encoding)
+            if flag:
+                f_out.write(out_data)
+            else:
+                msg = f"{file_path} {encoding} 转换到utf8失败, {out_data}"
+                os.remove(file_path)
+                return False, msg
 
     except Exception as e:
-        is_ok, check_msg = api.decode_check(read_data, encoding)
-        msg = f"{file_path} {encoding} 转换到utf8失败, {check_msg}"
+        msg = f"{file_path} {encoding} 转换到utf8失败, {e}"
         os.remove(file_path)
         return False, msg
 
