@@ -104,6 +104,7 @@ def revert_files(file_path):
 
 
 def convert_file_to_utf8(file):
+
     """
     将单个文件转换为utf-8编码
     """
@@ -116,36 +117,24 @@ def convert_file_to_utf8(file):
         msg = f"{file_path} 转换失败, 编码格式错误:{encoding} 可能是文件内容为空!"
         os.remove(file_path)
         return False, msg
+    read_data = b''
+
 
     try:
         # overwrite raw file
-        with open(raw_file_path, "r", encoding=encoding) as f_in:
-            with open(file_path, "w", encoding="utf-8") as f_out:
-                f_out.write(f_in.read())
+        with open(raw_file_path, "rb") as f_in:
+            read_data = f_in.read()
+
+        with open(file_path, "w", encoding="utf-8") as f_out:
+            out_data = read_data.decode(encoding)
+            f_out.write(out_data)
 
     except Exception as e:
-        msg = f"{file_path} {encoding} 转换到utf8失败, {e}"
+        is_ok, check_msg = api.decode_check(read_data, encoding)
+        msg = f"{file_path} {encoding} 转换到utf8失败, {check_msg}"
         os.remove(file_path)
         return False, msg
 
-        # 检测encoding是否为gbk或者gb18030，调用pyicu进行转换
-        # if encoding.lower() in ["gbk", "gb18030"]:
-        #     try:
-        #         # encoding = "GBK"
-        #         # with open(raw_file_path, "rb") as f:
-        #         #     data = f.read()
-        #         #     encoding = api.from_data(data=data, mode=3)
-
-        #         convert_file_to_utf8_use_icu(raw_file_path, file_path, encoding)
-        #         msg = msg + f" 重新转换 {encoding}，使用 icu 成功"
-        #         return True, msg
-        #     except Exception as e:
-        #         msg = msg + f" 重新转换 {encoding}，使用 icu 失败"
-        #         os.remove(file_path)
-        #         return False, msg
-        # else:
-        #     os.remove(file_path)
-        #     return False, msg
     return True, None
 
 
@@ -187,7 +176,6 @@ def run_convert_files(files, process_num):
             for future in futures:
                 results.append(future.result())
                 pbar.update(1)
-
     return results
 
 
@@ -261,14 +249,15 @@ def main():
         print(f"总文件数: {len(results)}")
         print(f"转换成功文件数: {success_count}")
         print(f"转换失败文件数: {failed_count}")
-        print(f"转换失败文件列表已保存至: {convert_result_file_name}")
         for msg in failed_msgs:
-            #sys.stderr.write(f"{msg}\n")
-            # 将转换错误结果保存至文件
-            with open(convert_result_file_name, 'w', newline='') as file:
-                writer = csv.writer(file)
-                for row in results:
-                    writer.writerow(row)
+            sys.stderr.write(f"{msg}\n")
+
+        # 将转换错误结果保存至文件
+        print(f"转换失败文件列表已保存至: {convert_result_file_name}")
+        with open(convert_result_file_name, 'w', newline='') as file:
+            writer = csv.writer(file)
+            for row in results:
+                writer.writerow(row)
 
         print("###################################### Step2 end ######################################")
 

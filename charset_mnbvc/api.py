@@ -160,7 +160,7 @@ def check_by_cchardect(data: bytes):
             ret = decode_check(data, "utf-8")
             if ret:
                 converted_encoding = "utf_8"
-        except Exception as err:
+        except Exception:
             converted_encoding = converted_encoding
 
     return converted_encoding
@@ -300,8 +300,8 @@ def decode_check(byte_sequence: bytes, encoding='utf-8', errors='strict') -> str
     :return: decoded characters
     """
     try:
-        decode_data = byte_sequence.decode(encoding, errors)
-        return decode_data
+        decode_data = byte_sequence.decode(encoding)
+        return True, decode_data
     except UnicodeDecodeError as e:
         # 解码左侧有效字符
         invalid_bytes = byte_sequence[e.start:e.end]
@@ -320,13 +320,13 @@ def decode_check(byte_sequence: bytes, encoding='utf-8', errors='strict') -> str
                                   :TIPS_CONTEXT_RANGE]
                     break
         else:  # 超过最大异常字节数，提示更换解码方式
-            raise UnicodeDecodeError(encoding, invalid_bytes, e.start, e.start + len(invalid_bytes),
+            msg = UnicodeDecodeError(encoding, invalid_bytes, e.start, e.start + len(invalid_bytes),
                                      "There are too many invalid bytes, please change codec.")
         # 格式化非法字节输出
         invalid_str = "\\x" + '\\x'.join([hex(b)[2:].zfill(2) for b in invalid_bytes])
-        raise UnicodeDecodeError(encoding, invalid_bytes, e.start, e.start + len(invalid_bytes),
-                                 f"There are invalid bytes in the string \"{left_chars + invalid_str + right_chars}\"")
-
+        msg = UnicodeDecodeError(encoding, invalid_bytes, e.start, e.start + len(invalid_bytes),
+                                 f'There are invalid bytes in the string \"{left_chars + invalid_str + right_chars}\"')
+        return False, msg
 
 def test():
     print("test")
