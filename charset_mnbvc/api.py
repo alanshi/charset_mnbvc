@@ -300,7 +300,7 @@ def decode_check(byte_sequence: bytes, encoding='utf-8', errors='strict') -> str
     :return: decoded characters
     """
     try:
-        decode_data = byte_sequence.decode(encoding)
+        decode_data = byte_sequence.decode(encoding, errors)
         return True, decode_data
     except UnicodeDecodeError as e:
         # 解码左侧有效字符
