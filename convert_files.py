@@ -259,9 +259,8 @@ def main():
         # 将转换错误结果保存至文件
         print(f"转换失败文件列表已保存至: {convert_result_file_name}")
         with open(convert_result_file_name, 'w', newline='') as file:
-            writer = csv.writer(file)
-            for row in results:
-                writer.writerow(row)
+            for msg in failed_msgs:
+                file.write(msg)
 
         print("###################################### Step2 end ######################################")
 
