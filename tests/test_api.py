@@ -52,6 +52,17 @@ class TestAPI(unittest.TestCase):
         result = api.decode(case[:context.exception.start], encoding)
         self.assertEqual(result, "两个意达\r\n作者：松谷美代子")
 
+    def test_convert_to_utf8(self):
+        case = b'\xb2\xe2\x80\xca\xd4\x80\xd3\xc3\x80\xc0\xfd'
+        self.assertEqual("测€试€用€例".encode('utf-8'), api.convert_to_utf8(case, 'gbk'))
+        with self.assertRaises(UnicodeDecodeError) as context:
+            case = b'\xb2\xe2\x80\xca\xd4\x80\xd3\xc0\xfd'
+            encoding = "gbk"
+            api.convert_to_utf8(case, encoding)
+        self.assertEqual(context.exception.start, 8)
+        self.assertEqual(context.exception.end, 9)
+        self.assertEqual(context.exception.object, b"\xfd")
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -329,5 +329,54 @@ def decode(byte_sequence: bytes, encoding='utf-8', errors='strict') -> str:
         raise e
 
 
+def convert_to_utf8(byte_sequence: bytes, encoding: str) -> bytes:
+    """
+    Convert a byte sequence of a specified encoding into a byte sequence encoded in UTF-8.
+    @param byte_sequence: input bytes
+    @param encoding: input encoding
+    @return: UTF-8 encoded byte sequence
+    """
+    encoding = encoding.upper()
+    if encoding.upper() == "UTF-8":
+        return byte_sequence
+    if encoding not in ("GBK", "CP936", "MS936", "GB18030"):
+        output_bytes = decode(byte_sequence, encoding).encode("UTF-8")
+        return output_bytes
+    output_bytes = b''
+    error_start = 0
+    while True:
+        try:
+            output_bytes += decode(byte_sequence, encoding).encode('UTF-8')
+        except UnicodeDecodeError as e:
+            if byte_sequence[e.start:e.end] == b'\x80':
+                error_start += (e.start + 1)
+                output_bytes += decode(byte_sequence[:e.start], encoding).encode('UTF-8')
+                output_bytes += b'\xe2\x82\xac'
+                byte_sequence = byte_sequence[e.end:]
+            else:
+                e.start += error_start
+                e.end = e.start + len(e.object)
+                raise e
+        else:
+            break
+    return output_bytes
+
+
+def convert_file_to_utf8(file_path: str, encoding: str, output_path=""):
+    """
+    @param file_path: input file path
+    @param encoding: input file encoding
+    @param output_path: output file path
+    @return:
+    """
+    if not output_path:
+        output_path = "_utf8".join(os.path.splitext(file_path))
+    with open(file_path, "rb") as rf:
+        byte_sequence = rf.read()
+        utf8_bytes = convert_to_utf8(byte_sequence, encoding)
+        with open(output_path, "wb") as wf:
+            wf.write(utf8_bytes)
+
+
 def test():
     print("test")
