@@ -306,7 +306,7 @@ def decode(byte_sequence: bytes, encoding='utf-8', errors='strict') -> str:
         # 解码左侧有效字符
         e.object = byte_sequence[e.start:e.end]
         left_chars = byte_sequence[:e.start].decode(encoding)[TIPS_CONTEXT_RANGE * -1:]
-        max_scan_bytes_size = min(MAX_INVALID_BYTES_SIZE, len(byte_sequence) - e.end)
+        max_scan_bytes_size = min(MAX_INVALID_BYTES_SIZE, len(byte_sequence) - e.end + 1)
         # 解码右侧有效字符
         for i in range(max_scan_bytes_size):
             try:
