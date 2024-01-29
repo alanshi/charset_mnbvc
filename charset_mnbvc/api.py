@@ -28,7 +28,7 @@ def is_perceivable(s: str):
     for char in s:
         # Check if the character is not perceivable
         if not (char.isprintable() or char in [' ', '\t', '\n']):
-            return decode_check(char.encode('unicode_escape'))
+            return decode(char.encode('unicode_escape'))
     return True
 
 
@@ -56,7 +56,7 @@ def fix_data(s: str) -> list:
         for target in EXT_ENCODING:
             if item == target:
                 continue
-            fixed_text = decode_check(guess_text, encoding=target, errors='replace')
+            fixed_text = decode(guess_text, encoding=target, errors='replace')
             dic = {"origin": s, "guess": fixed_text,
                    "from": item, "to": target}
             result.append(dic)
@@ -157,7 +157,7 @@ def check_by_cchardect(data: bytes):
     # if the encoding is not in the list, try to use utf-8 to decode
     if converted_encoding in ["ascii", "windows_1252", "utf_8"]:
         try:
-            ret = decode_check(data, "utf-8")
+            ret = decode(data, "utf-8")
             if ret:
                 converted_encoding = "utf_8"
         except Exception as err:
@@ -174,7 +174,7 @@ def check_by_mnbvc(data: bytes, special_encodings=None):
     final_encoding = None
     # convert coding
     converted_info = {
-        encoding: decode_check(data, encoding=encoding, errors='ignore')
+        encoding: decode(data, encoding=encoding, errors='ignore')
         for encoding in ENCODINGS
     }
 
@@ -208,7 +208,7 @@ def check_disorder_chars(file_path: str, threshold=0.1):
         data = fp.read()
 
     total_chars = len(data)
-    disorder_chars = decode_check(decode_check(data).encode("unicode_escape")).count('ufffd')
+    disorder_chars = decode(decode(data).encode("unicode_escape")).count('ufffd')
     ratio = disorder_chars / total_chars
     return ratio >= threshold, ratio
 
@@ -238,7 +238,7 @@ def get_cn_charset(source_data: str, source_type="file", mode=1, special_encodin
             # if b'\x00' in data:
             #     return None
 
-            if 'ufffd' in decode_check(decode_check(data).encode("unicode_escape")):
+            if 'ufffd' in decode(decode(data).encode("unicode_escape")):
                 return "UNKNOWN"
 
             # 内容是否包含 unicode控制符
@@ -274,14 +274,14 @@ def convert_encoding(source_data: bytes, source_encoding, target_encoding="utf-8
     :return: data
     """
     try:
-        data = decode_check(source_data, source_encoding)
-        data = decode_check(data.encode(encoding=target_encoding), target_encoding)
+        data = decode(source_data, source_encoding)
+        data = decode(data.encode(encoding=target_encoding), target_encoding)
     except Exception as err:
         if source_encoding == "big5":
             try:
                 source_encoding = "cp950"
-                data = decode_check(source_data, source_encoding)
-                data = decode_check(data.encode(encoding=target_encoding), target_encoding)
+                data = decode(source_data, source_encoding)
+                data = decode(data.encode(encoding=target_encoding), target_encoding)
             except Exception as err:
                 sys.stderr.write(f"Error: {str(err)}\n")
                 data = source_data
@@ -292,7 +292,7 @@ def convert_encoding(source_data: bytes, source_encoding, target_encoding="utf-8
     return data
 
 
-def decode_check(byte_sequence: bytes, encoding='utf-8', errors='strict') -> str:
+def decode(byte_sequence: bytes, encoding='utf-8', errors='strict') -> str:
     """
     :param byte_sequence: input bytes
     :param encoding: input encoding
