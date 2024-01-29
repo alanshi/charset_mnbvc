@@ -160,7 +160,7 @@ def check_by_cchardect(data: bytes):
             ret = decode(data, "utf-8")
             if ret:
                 converted_encoding = "utf_8"
-        except Exception as err:
+        except Exception:
             converted_encoding = converted_encoding
 
     return converted_encoding
@@ -301,7 +301,7 @@ def decode(byte_sequence: bytes, encoding='utf-8', errors='strict') -> str:
     """
     try:
         decode_data = byte_sequence.decode(encoding, errors)
-        return decode_data
+        return True, decode_data
     except UnicodeDecodeError as e:
         # 解码左侧有效字符
         e.object = byte_sequence[e.start:e.end]
