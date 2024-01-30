@@ -3,6 +3,7 @@ import csv
 import os
 import shutil
 import sys
+import time
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
@@ -34,7 +35,7 @@ def parse_args():
         default=2,
         type=int,
         dest='mode',
-        help='mode=1 mnbvc, mode=2 ccharde(默认), mode=3 pyicu'
+        help='mode=1 mnbvc, mode=2 ccharde(默认)'
     )
     parser.add_argument(
         '-i',
@@ -48,14 +49,23 @@ def parse_args():
         default=1,
         type=int,
         dest='process_step',
-        help='执行步骤,1为编码检测,2为编码转换'
+        help='执行步骤,1为编码检测,2为编码转换,3为自动验证,默认为1'
     )
     parser.add_argument(
         '-r',
-        required=True,
-        metavar='result_file_name',
-        dest='result_file_name',
+        required=False,
+        default=f'check_result_{int(time.time())}.csv',
+        metavar='check_result_file_name',
+        dest='check_result_file_name',
         help='指定编码检测结果文件名'
+    )
+    parser.add_argument(
+        '-o',
+        required=False,
+        default=f'convert_result{int(time.time())}.csv',
+        metavar='convert_result_file_name',
+        dest='convert_result_file_name',
+        help='指定编码转换结果文件名'
     )
     parser.add_argument(
         '-u',
@@ -92,7 +102,9 @@ def revert_files(file_path):
 #             # 将转换后的UTF-8数据写入输出文件
 #             f_output.write(str(utf8_data))
 
+
 def convert_file_to_utf8(file):
+
     """
     将单个文件转换为utf-8编码
     """
@@ -105,36 +117,28 @@ def convert_file_to_utf8(file):
         msg = f"{file_path} 转换失败, 编码格式错误:{encoding} 可能是文件内容为空!"
         os.remove(file_path)
         return False, msg
+    read_data = b''
+
 
     try:
         # overwrite raw file
-        with open(raw_file_path, "r", encoding=encoding) as f_in:
-            with open(file_path, "w", encoding="utf-8") as f_out:
-                f_out.write(f_in.read())
+        with open(raw_file_path, "rb") as f_in:
+            read_data = f_in.read()
+
+        with open(file_path, "w", encoding="utf-8") as f_out:
+            flag, out_data = api.decode_check(read_data, encoding)
+            if flag:
+                f_out.write(out_data)
+            else:
+                msg = f"{file_path} {encoding} 转换到utf8失败, {out_data}"
+                os.remove(file_path)
+                return False, msg
 
     except Exception as e:
         msg = f"{file_path} {encoding} 转换到utf8失败, {e}"
         os.remove(file_path)
         return False, msg
 
-        # 检测encoding是否为gbk或者gb18030，调用pyicu进行转换
-        # if encoding.lower() in ["gbk", "gb18030"]:
-        #     try:
-        #         # encoding = "GBK"
-        #         # with open(raw_file_path, "rb") as f:
-        #         #     data = f.read()
-        #         #     encoding = api.from_data(data=data, mode=3)
-
-        #         convert_file_to_utf8_use_icu(raw_file_path, file_path, encoding)
-        #         msg = msg + f" 重新转换 {encoding}，使用 icu 成功"
-        #         return True, msg
-        #     except Exception as e:
-        #         msg = msg + f" 重新转换 {encoding}，使用 icu 失败"
-        #         os.remove(file_path)
-        #         return False, msg
-        # else:
-        #     os.remove(file_path)
-        #     return False, msg
     return True, None
 
 
@@ -176,7 +180,6 @@ def run_convert_files(files, process_num):
             for future in futures:
                 results.append(future.result())
                 pbar.update(1)
-
     return results
 
 
@@ -197,13 +200,14 @@ def main():
     """
     inputs = parse_args()
     process_step = inputs.process_step
-    result_file_name = inputs.result_file_name
+    check_result_file_name = inputs.check_result_file_name
+    convert_result_file_name = inputs.convert_result_file_name
     undo = inputs.undo
     input_folder_path = inputs.folder_path
 
     if undo:
         files = []
-        with open(result_file_name, newline='') as file:
+        with open(check_result_file_name, newline='') as file:
             reader = csv.reader(file)
             for row in reader:
                 files.append(
@@ -216,21 +220,21 @@ def main():
     if process_step == 1:
         print("###################################### Step1 start ######################################")
         file_count, results = encoding_check(inputs)
-        with open(result_file_name, 'w', newline='') as file:
+        with open(check_result_file_name, 'w', newline='') as file:
             writer = csv.writer(file)
             for row in results:
                 writer.writerow(row)
-        print(f"已将检测结果保存至{result_file_name}文件中,请查阅!")
+        print(f"已将检测结果保存至{check_result_file_name}文件中,请查阅!")
         print("###################################### Step1 end ######################################")
 
     if process_step == 2:
         print("###################################### Step2 start ######################################")
         files = []
-        with open(result_file_name, newline='') as file:
+        with open(check_result_file_name, newline='') as file:
             reader = csv.reader(file)
             for row in reader:
                 files.append(
-                    (row[0],row[1])
+                    (row[0], row[1])
                 )
         results = run_convert_files(files, inputs.process_num)
 
@@ -251,6 +255,13 @@ def main():
         print(f"转换失败文件数: {failed_count}")
         for msg in failed_msgs:
             sys.stderr.write(f"{msg}\n")
+
+        # 将转换错误结果保存至文件
+        print(f"转换失败文件列表已保存至: {convert_result_file_name}")
+        with open(convert_result_file_name, 'w', newline='') as file:
+            for msg in failed_msgs:
+                file.write(msg)
+
         print("###################################### Step2 end ######################################")
 
         verify.process(input_folder_path)
@@ -258,6 +269,7 @@ def main():
     if process_step == 3:
         # auto verify files
         verify.process(input_folder_path)
+
 
 if __name__ == "__main__":
     main()

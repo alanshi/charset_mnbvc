@@ -160,7 +160,7 @@ def check_by_cchardect(data: bytes):
             ret = decode(data, "utf-8")
             if ret:
                 converted_encoding = "utf_8"
-        except Exception as err:
+        except Exception:
             converted_encoding = converted_encoding
 
     return converted_encoding
