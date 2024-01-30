@@ -39,18 +39,29 @@ class TestAPI(unittest.TestCase):
         case = "碁恒".encode("cp950")
         self.assertEqual(api.convert_encoding(case, "big5").encode("cp950"), "碁恒".encode("cp950"))
 
-    def test_decode_check(self):
+    def test_decode(self):
         with self.assertRaises(UnicodeDecodeError) as context:
             case = b'\xc1\xbd\xb8\xf6\xd2\xe2\xb4\xef\r\n\xd7\xf7\xd5\xdf\xa3\xba\xcb\xc9\xb9\xc8\xc3\xc0\xb4' \
                    b'\xfa\xd7\xd3\xa3\xa0\xa3\xa0'
             encoding = "gbk"
-            api.decode_check(case, encoding)
+            api.decode(case, encoding)
         self.assertEqual(context.exception.start, 26)
         self.assertEqual(context.exception.end, 27)
         self.assertEqual(context.exception.object, b'\xa3')
         # 通过异常提示异常字节索引截取正常字节再进行解码测试
-        result = api.decode_check(case[:context.exception.start], encoding)
+        result = api.decode(case[:context.exception.start], encoding)
         self.assertEqual(result, "两个意达\r\n作者：松谷美代子")
+
+    def test_convert_to_utf8(self):
+        case = b'\xb2\xe2\x80\xca\xd4\x80\xd3\xc3\x80\xc0\xfd'
+        self.assertEqual("测€试€用€例".encode('utf-8'), api.convert_to_utf8(case, 'gbk'))
+        with self.assertRaises(UnicodeDecodeError) as context:
+            case = b'\xb2\xe2\x80\xca\xd4\x80\xd3\xc0\xfd'
+            encoding = "gbk"
+            api.convert_to_utf8(case, encoding)
+        self.assertEqual(context.exception.start, 8)
+        self.assertEqual(context.exception.end, 9)
+        self.assertEqual(context.exception.object, b"\xfd")
 
 
 if __name__ == '__main__':

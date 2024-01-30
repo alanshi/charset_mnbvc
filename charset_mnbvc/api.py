@@ -28,7 +28,7 @@ def is_perceivable(s: str):
     for char in s:
         # Check if the character is not perceivable
         if not (char.isprintable() or char in [' ', '\t', '\n']):
-            return decode_check(char.encode('unicode_escape'))
+            return decode(char.encode('unicode_escape'))
     return True
 
 
@@ -56,7 +56,7 @@ def fix_data(s: str) -> list:
         for target in EXT_ENCODING:
             if item == target:
                 continue
-            fixed_text = decode_check(guess_text, encoding=target, errors='replace')
+            fixed_text = decode(guess_text, encoding=target, errors='replace')
             dic = {"origin": s, "guess": fixed_text,
                    "from": item, "to": target}
             result.append(dic)
@@ -157,7 +157,7 @@ def check_by_cchardect(data: bytes):
     # if the encoding is not in the list, try to use utf-8 to decode
     if converted_encoding in ["ascii", "windows_1252", "utf_8"]:
         try:
-            ret = decode_check(data, "utf-8")
+            ret = decode(data, "utf-8")
             if ret:
                 converted_encoding = "utf_8"
         except Exception:
@@ -174,7 +174,7 @@ def check_by_mnbvc(data: bytes, special_encodings=None):
     final_encoding = None
     # convert coding
     converted_info = {
-        encoding: decode_check(data, encoding=encoding, errors='ignore')
+        encoding: decode(data, encoding=encoding, errors='ignore')
         for encoding in ENCODINGS
     }
 
@@ -208,7 +208,7 @@ def check_disorder_chars(file_path: str, threshold=0.1):
         data = fp.read()
 
     total_chars = len(data)
-    disorder_chars = decode_check(decode_check(data).encode("unicode_escape")).count('ufffd')
+    disorder_chars = decode(decode(data).encode("unicode_escape")).count('ufffd')
     ratio = disorder_chars / total_chars
     return ratio >= threshold, ratio
 
@@ -238,7 +238,7 @@ def get_cn_charset(source_data: str, source_type="file", mode=1, special_encodin
             # if b'\x00' in data:
             #     return None
 
-            if 'ufffd' in decode_check(decode_check(data).encode("unicode_escape")):
+            if 'ufffd' in decode(decode(data).encode("unicode_escape")):
                 return "UNKNOWN"
 
             # 内容是否包含 unicode控制符
@@ -274,14 +274,14 @@ def convert_encoding(source_data: bytes, source_encoding, target_encoding="utf-8
     :return: data
     """
     try:
-        data = decode_check(source_data, source_encoding)
-        data = decode_check(data.encode(encoding=target_encoding), target_encoding)
+        data = decode(source_data, source_encoding)
+        data = decode(data.encode(encoding=target_encoding), target_encoding)
     except Exception as err:
         if source_encoding == "big5":
             try:
                 source_encoding = "cp950"
-                data = decode_check(source_data, source_encoding)
-                data = decode_check(data.encode(encoding=target_encoding), target_encoding)
+                data = decode(source_data, source_encoding)
+                data = decode(data.encode(encoding=target_encoding), target_encoding)
             except Exception as err:
                 sys.stderr.write(f"Error: {str(err)}\n")
                 data = source_data
@@ -292,7 +292,7 @@ def convert_encoding(source_data: bytes, source_encoding, target_encoding="utf-8
     return data
 
 
-def decode_check(byte_sequence: bytes, encoding='utf-8', errors='strict') -> str:
+def decode(byte_sequence: bytes, encoding='utf-8', errors='strict') -> str:
     """
     :param byte_sequence: input bytes
     :param encoding: input encoding
@@ -301,12 +301,12 @@ def decode_check(byte_sequence: bytes, encoding='utf-8', errors='strict') -> str
     """
     try:
         decode_data = byte_sequence.decode(encoding, errors)
-        return True, decode_data
+        return decode_data
     except UnicodeDecodeError as e:
         # 解码左侧有效字符
-        invalid_bytes = byte_sequence[e.start:e.end]
+        e.object = byte_sequence[e.start:e.end]
         left_chars = byte_sequence[:e.start].decode(encoding)[TIPS_CONTEXT_RANGE * -1:]
-        max_scan_bytes_size = min(MAX_INVALID_BYTES_SIZE, len(byte_sequence) - e.end)
+        max_scan_bytes_size = min(MAX_INVALID_BYTES_SIZE, len(byte_sequence) - e.end + 1)
         # 解码右侧有效字符
         for i in range(max_scan_bytes_size):
             try:
@@ -314,19 +314,69 @@ def decode_check(byte_sequence: bytes, encoding='utf-8', errors='strict') -> str
                 break
             except UnicodeDecodeError as right_e:
                 if not right_e.start:
-                    invalid_bytes += byte_sequence[e.end + i:e.end + i + 1]
+                    e.object += byte_sequence[e.end + i:e.end + i + 1]
+                    e.end = e.start + len(e.object)
                 else:
                     right_chars = byte_sequence[e.end + i:e.end + i + right_e.start].decode(encoding)[
                                   :TIPS_CONTEXT_RANGE]
                     break
         else:  # 超过最大异常字节数，提示更换解码方式
-            msg = UnicodeDecodeError(encoding, invalid_bytes, e.start, e.start + len(invalid_bytes),
-                                     "There are too many invalid bytes, please change codec.")
+            e.reason = "There are too many invalid bytes, please change codec."
+            raise e
         # 格式化非法字节输出
-        invalid_str = "\\x" + '\\x'.join([hex(b)[2:].zfill(2) for b in invalid_bytes])
-        msg = UnicodeDecodeError(encoding, invalid_bytes, e.start, e.start + len(invalid_bytes),
-                                 f'There are invalid bytes in the string \"{left_chars + invalid_str + right_chars}\"')
-        return False, msg
+        invalid_str = "\\x" + '\\x'.join([hex(b)[2:].zfill(2) for b in e.object])
+        e.reason = f"There are invalid bytes in the string \"{left_chars + invalid_str + right_chars}\""
+        raise e
+
+
+def convert_to_utf8(byte_sequence: bytes, encoding: str) -> bytes:
+    """
+    Convert a byte sequence of a specified encoding into a byte sequence encoded in UTF-8.
+    @param byte_sequence: input bytes
+    @param encoding: input encoding
+    @return: UTF-8 encoded byte sequence
+    """
+    encoding = encoding.upper()
+    if encoding.upper() == "UTF-8":
+        return byte_sequence
+    if encoding not in ("GBK", "CP936", "MS936", "GB18030"):
+        output_bytes = decode(byte_sequence, encoding).encode("UTF-8")
+        return output_bytes
+    output_bytes = b''
+    error_start = 0
+    while True:
+        try:
+            output_bytes += decode(byte_sequence, encoding).encode('UTF-8')
+        except UnicodeDecodeError as e:
+            if byte_sequence[e.start:e.end] == b'\x80':
+                error_start += (e.start + 1)
+                output_bytes += decode(byte_sequence[:e.start], encoding).encode('UTF-8')
+                output_bytes += b'\xe2\x82\xac'
+                byte_sequence = byte_sequence[e.end:]
+            else:
+                e.start += error_start
+                e.end = e.start + len(e.object)
+                raise e
+        else:
+            break
+    return output_bytes
+
+
+def convert_file_to_utf8(file_path: str, encoding: str, output_path=""):
+    """
+    @param file_path: input file path
+    @param encoding: input file encoding
+    @param output_path: output file path
+    @return:
+    """
+    if not output_path:
+        output_path = "_utf8".join(os.path.splitext(file_path))
+    with open(file_path, "rb") as rf:
+        byte_sequence = rf.read()
+        utf8_bytes = convert_to_utf8(byte_sequence, encoding)
+        with open(output_path, "wb") as wf:
+            wf.write(utf8_bytes)
+
 
 def test():
     print("test")
