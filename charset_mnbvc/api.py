@@ -2,6 +2,7 @@ import os
 import re
 import sys
 from re import compile
+from collections import Counter
 
 import cchardet
 import tqdm
@@ -212,59 +213,68 @@ def check_disorder_chars(file_path: str, threshold=0.1):
     ratio = disorder_chars / total_chars
     return ratio >= threshold, ratio
 
-
-def get_cn_charset(source_data: str, source_type="file", mode=1, special_encodings=None):
+def get_cn_charset(source_data: str, chunk_size=2000, source_type="file", mode=1, special_encodings=None):
     """
     :param source_data: file path
     :param mode: 1: mnbvc, 2: cchardet
     :param source_type: file or data
     :return: encoding
     """
-    encoding = None
+    encoding_list = []
     try:
-        data = ""
+        data_list = []
         if source_type == "file":
             with open(source_data, 'rb') as fp:
-                data = fp.read()
+                fp.seek(0, 2)
+                file_length = fp.tell()
+                fp.seek(0)
+                for i in range(file_length // chunk_size + 1):
+                    data_chunk = fp.read(chunk_size)
+                    data_list.append(data_chunk)
 
-                if not data:
-                    return None
+                    if not data_chunk:
+                        return None
         else:
-            data = source_data
+            data_list = [source_data]
+        encoding = None
+        for data in data_list:
+            try:
 
-        try:
+                # 内容中是否包含 null 字符（二进制文件通常包含 null 字符）
+                # if b'\x00' in data:
+                #     return None
 
-            # 内容中是否包含 null 字符（二进制文件通常包含 null 字符）
-            # if b'\x00' in data:
-            #     return None
+                if 'ufffd' in decode_check(decode_check(data).encode("unicode_escape")):
+                    return "UNKNOWN"
 
-            if 'ufffd' in decode(decode(data).encode("unicode_escape")):
-                return "UNKNOWN"
+                # 内容是否包含 unicode控制符
+                # if has_control_characters(data.decode("unicode_escape")):
+                #     return "UNKNOWN"
 
-            # 内容是否包含 unicode控制符
-            # if has_control_characters(data.decode("unicode_escape")):
-            #     return "UNKNOWN"
+                # return_is_perceivable = is_perceivable(data.decode("unicode_escape"))
+                # if not return_is_perceivable:
+                #     return "UNKNOWN: %s" % return_is_perceivable
 
-            # return_is_perceivable = is_perceivable(data.decode("unicode_escape"))
-            # if not return_is_perceivable:
-            #     return "UNKNOWN: %s" % return_is_perceivable
+            except Exception as err:
+                pass
 
-        except Exception as err:
-            pass
+            if mode == 1:
+                encoding = check_by_mnbvc(
+                    data=data, special_encodings=special_encodings)
+            elif mode == 2:
+                encoding = check_by_cchardect(data=data)
+            else:
+                sys.stderr.write(f'Error: mode {mode} is not supported.')
 
-        if mode == 1:
-            encoding = check_by_mnbvc(
-                data=data, special_encodings=special_encodings)
-        elif mode == 2:
-            encoding = check_by_cchardect(data=data)
-        else:
-            sys.stderr.write(f'Error: mode {mode} is not supported.')
+            encoding_list.append(encoding)
 
     except Exception as err:
         sys.stderr.write(f"Error: {str(err)}\n")
 
-    return encoding
+    counts = Counter(encoding_list)
+    encoding = counts.most_common(1)[0][0]
 
+    return encoding
 
 def convert_encoding(source_data: bytes, source_encoding, target_encoding="utf-8") -> str:
     """
