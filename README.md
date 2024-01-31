@@ -196,6 +196,16 @@ optional arguments:
 ###################################### Step3 end ######################################
 ```
 
+#### pre_check.py使用范例
+```
+usage: convert_files.py [-h] [-p PROCESS_NUM] [-m MODE] -i inputDirectory [-r check_result_file_name]
+convert_files.py: error: the following arguments are required: -i
+
+python pre_check.py -i /Users/alan/temp_test/20230101/aliyun.20230101.8.武侠小说
+检测进度1: 100%|█████████████████████████████████████████████████████████████████| 3724/3724 [00:01<00:00, 3153.64its]
+检测进度2: 100%|█████████████████████████████████████████████████████████████████| 3724/3724 [00:00<00:00, 4288.96its]
+已将检测出错结果保存至 check_result_1706672423.csv 文件中,请查阅!
+```
 
 #### wiki地址:
 https://wiki.mnbvc.org/doku.php/ylzq
