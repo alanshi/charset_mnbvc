@@ -7,8 +7,8 @@ from collections import Counter
 import cchardet
 import tqdm
 
-from common_utils import print_table
-from constant import (CCHARDECT_ENCODING_MAP, ENCODINGS, EXT_ENCODING,
+from .common_utils import print_table
+from .constant import (CCHARDECT_ENCODING_MAP, ENCODINGS, EXT_ENCODING,
                        REGEX_FEATURE_ALL, TIPS_CONTEXT_RANGE, MAX_INVALID_BYTES_SIZE)
 
 # compile makes it more efficient
