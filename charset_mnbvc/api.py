@@ -7,8 +7,8 @@ from collections import Counter
 import cchardet
 import tqdm
 
-from .common_utils import print_table
-from .constant import (CCHARDECT_ENCODING_MAP, ENCODINGS, EXT_ENCODING,
+from common_utils import print_table
+from constant import (CCHARDECT_ENCODING_MAP, ENCODINGS, EXT_ENCODING,
                        REGEX_FEATURE_ALL, TIPS_CONTEXT_RANGE, MAX_INVALID_BYTES_SIZE)
 
 # compile makes it more efficient
@@ -167,35 +167,46 @@ def check_by_cchardect(data: bytes):
     return converted_encoding
 
 
-def check_by_mnbvc(data: bytes, special_encodings=None):
+def divide_bytes(data: bytes, chunk_size=2000):
+    return [data[i:i + chunk_size] for i in range(0, len(data), chunk_size)]
+
+def check_by_mnbvc(data: bytes, chunk_size=2000, special_encodings=None):
     """
     :param data: data
     :return: encoding
     """
-    final_encoding = None
-    # convert coding
-    converted_info = {
-        encoding: decode(data, encoding=encoding, errors='ignore')
-        for encoding in ENCODINGS
-    }
 
-    # regex match
-    final_encodings = [
-        k
-        for k, v in converted_info.items() if re_char_check.findall(v)
-    ]
+    # split data to N chunks
+    divided_data = divide_bytes(data, chunk_size=chunk_size)
+    final_encoding_list = []
+    for chunk_data in divided_data:
+        final_encoding = None
+        # convert coding
+        converted_info = {
+            encoding: decode(chunk_data, encoding=encoding, errors='ignore')
+            for encoding in ENCODINGS
+        }
 
-    # returns the match condition
-    if not final_encodings:
-        # try to use cchardet if the normal decoding does not work
-        final_encodings = [check_by_cchardect(data=data)]
+        # regex match
+        final_encodings = [
+            k
+            for k, v in converted_info.items() if re_char_check.findall(v)
+        ]
 
-    if special_encodings:
-        lower_special_encodings = [x.lower() for x in special_encodings]
-        final_encodings = list(set(final_encodings) &
-                               set(lower_special_encodings))
+        # returns the match condition
+        if not final_encodings:
+            # try to use cchardet if the normal decoding does not work
+            final_encodings = [check_by_cchardect(data=chunk_data)]
 
-    final_encoding = final_encodings[0] if final_encodings else None
+        if special_encodings:
+            lower_special_encodings = [x.lower() for x in special_encodings]
+            final_encodings = list(set(final_encodings) &
+                                   set(lower_special_encodings))
+
+        final_encoding = final_encodings[0] if final_encodings else None
+        final_encoding_list.append(final_encoding)
+    counts = Counter(final_encoding_list)
+    final_encoding = counts.most_common(1)[0][0]
     return final_encoding
 
 
@@ -213,68 +224,59 @@ def check_disorder_chars(file_path: str, threshold=0.1):
     ratio = disorder_chars / total_chars
     return ratio >= threshold, ratio
 
-def get_cn_charset(source_data: str, chunk_size=2000, source_type="file", mode=1, special_encodings=None):
+
+def get_cn_charset(source_data: str, source_type="file", mode=1, chunk_size=2000, special_encodings=None):
     """
     :param source_data: file path
     :param mode: 1: mnbvc, 2: cchardet
     :param source_type: file or data
     :return: encoding
     """
-    encoding_list = []
+    encoding = None
     try:
-        data_list = []
+        data = ""
         if source_type == "file":
             with open(source_data, 'rb') as fp:
-                fp.seek(0, 2)
-                file_length = fp.tell()
-                fp.seek(0)
-                for i in range(file_length // chunk_size + 1):
-                    data_chunk = fp.read(chunk_size)
-                    data_list.append(data_chunk)
+                data = fp.read()
 
-                    if not data_chunk:
-                        return None
+                if not data:
+                    return None
         else:
-            data_list = [source_data]
-        encoding = None
-        for data in data_list:
-            try:
+            data = source_data
 
-                # 内容中是否包含 null 字符（二进制文件通常包含 null 字符）
-                # if b'\x00' in data:
-                #     return None
+        try:
 
-                if 'ufffd' in decode_check(decode_check(data).encode("unicode_escape")):
-                    return "UNKNOWN"
+            # 内容中是否包含 null 字符（二进制文件通常包含 null 字符）
+            # if b'\x00' in data:
+            #     return None
 
-                # 内容是否包含 unicode控制符
-                # if has_control_characters(data.decode("unicode_escape")):
-                #     return "UNKNOWN"
+            if 'ufffd' in decode(decode(data).encode("unicode_escape")):
+                return "UNKNOWN"
 
-                # return_is_perceivable = is_perceivable(data.decode("unicode_escape"))
-                # if not return_is_perceivable:
-                #     return "UNKNOWN: %s" % return_is_perceivable
+            # 内容是否包含 unicode控制符
+            # if has_control_characters(data.decode("unicode_escape")):
+            #     return "UNKNOWN"
 
-            except Exception as err:
-                pass
+            # return_is_perceivable = is_perceivable(data.decode("unicode_escape"))
+            # if not return_is_perceivable:
+            #     return "UNKNOWN: %s" % return_is_perceivable
 
-            if mode == 1:
-                encoding = check_by_mnbvc(
-                    data=data, special_encodings=special_encodings)
-            elif mode == 2:
-                encoding = check_by_cchardect(data=data)
-            else:
-                sys.stderr.write(f'Error: mode {mode} is not supported.')
+        except Exception as err:
+            pass
 
-            encoding_list.append(encoding)
+        if mode == 1:
+            encoding = check_by_mnbvc(
+                data=data, chunk_size=chunk_size, special_encodings=special_encodings)
+        elif mode == 2:
+            encoding = check_by_cchardect(data=data)
+        else:
+            sys.stderr.write(f'Error: mode {mode} is not supported.')
 
     except Exception as err:
         sys.stderr.write(f"Error: {str(err)}\n")
 
-    counts = Counter(encoding_list)
-    encoding = counts.most_common(1)[0][0]
-
     return encoding
+
 
 def convert_encoding(source_data: bytes, source_encoding, target_encoding="utf-8") -> str:
     """
