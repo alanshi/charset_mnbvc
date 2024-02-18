@@ -36,7 +36,7 @@ def has_control_characters(text: str):
     """
     :param text: text
     :return: bool
-    :ref: https://www.fileformat.info/info/unicode/category/Cc/list.htm
+    :ref: https://www.file  at.info/info/unicode/category/Cc/list.htm
     """
     pattern = r'[\u0000-\u001f\u007f-\u009f]'
     match = re.search(pattern, text)
@@ -284,10 +284,10 @@ def convert_encoding(source_data: bytes, source_encoding, target_encoding="utf-8
                 data = decode(data.encode(encoding=target_encoding), target_encoding)
             except Exception as err:
                 sys.stderr.write(f"Error: {str(err)}\n")
-                data = source_data
+                data = None
         else:
             sys.stderr.write(f"Error: {str(err)}\n")
-            data = source_data
+            data = None
 
     return data
 
