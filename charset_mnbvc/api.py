@@ -170,6 +170,7 @@ def check_by_cchardect(data: bytes):
 def divide_bytes(data: bytes, chunk_size=2000):
     return [data[i:i + chunk_size] for i in range(0, len(data), chunk_size)]
 
+
 def check_by_mnbvc(data: bytes, chunk_size=2000, special_encodings=None):
     """
     :param data: data
@@ -206,6 +207,8 @@ def check_by_mnbvc(data: bytes, chunk_size=2000, special_encodings=None):
         final_encoding = final_encodings[0] if final_encodings else None
         final_encoding_list.append(final_encoding)
     counts = Counter(final_encoding_list)
+    if not counts:
+        return None
     final_encoding = counts.most_common(1)[0][0]
     return final_encoding
 
