@@ -1,5 +1,5 @@
 ### 项目描述
-本项目旨在对大量文本文件进行快速编码检测以辅助MNBVC（https://github.com/esbatmop/MNBVC）语料集项目的数据清洗工作
+本项目旨在对大量文本文件进行快速编码检测以辅助 [MNBVC](https://github.com/esbatmop/MNBVC) 语料集项目的数据清洗工作
 
 
 #### 模块安装
