@@ -9,10 +9,27 @@ import tqdm
 
 from .common_utils import print_table
 from .constant import (CCHARDECT_ENCODING_MAP, ENCODINGS, EXT_ENCODING,
-                       REGEX_FEATURE_ALL, TIPS_CONTEXT_RANGE, MAX_INVALID_BYTES_SIZE)
+                       REGEX_FEATURE_ALL, TIPS_CONTEXT_RANGE, MAX_INVALID_BYTES_SIZE, BINARY_EXTENSIONS)
 
 # compile makes it more efficient
 re_char_check = compile(REGEX_FEATURE_ALL)
+
+def is_binary(file_path: str) -> bool:
+    """
+    Checks if file is binary data
+    Args:
+    data (bytes): The bytes to check.
+    Reyturns:
+    bool: True is file are binary data, Flase otherwise.
+    """
+    # by BINARY_EXTENSIONS
+    _, file_extension = os.path.splitext(file_path)
+    if file_extension in BINARY_EXTENSIONS:
+        return True
+
+    # by encoding check
+    encoding = from_file(file_path, mode=2)
+    return True if not encoding else False
 
 
 def is_perceivable(s: str):
@@ -68,7 +85,7 @@ def fix_data(s: str) -> list:
 def from_data(data, mode) -> str:
     """
     :param data: data
-    :param mode: 1:cchardet 2:mnbvc
+    :param mode: 1:use mnbvc  2: use cchardet
     :return: encoding
     """
     coding_name = get_cn_charset(

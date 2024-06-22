@@ -91,3 +91,6 @@ CCHARDECT_ENCODING_MAP = {
     "IBM855": "ibm855",
     "M": "m"
 }
+
+# 常见二进制文件扩展名
+BINARY_EXTENSIONS= ['.aiff','.!!!','.ani','.arj','.avi','.awd','.bak','.bas','.bin','.bmp','.cab','.cdr','.chk','.com','.cpx','.cur','.dbf','.dll','.doc','.dwg','.eps','.exe','.njx','.pcb','.pdf','.pm5','.ppt','.fon','.gb','.get','.gif','.gz','.hqx','.ico','.ini','.lnk','.m3u','.mid','.vod','.mp3','.mpeg','.mpg','.ps','.psd','.pub','.qt','.ra','.ram','.rar','.rsf','.sch','.scr','.sea','.sit','.swf','.sys','.tar','.tif','.tiff','.tmp','.viv','.vqf','.wav','.wk1','.wq1','.wri','.xls','.Z','.zip','.bmp','.clp','.cup','.dib','.emf','.eps','.fpx','.gif','.iff','.img','.jpg','.lbm','.mac','.msp','.pbm','.pct','.pcx','.pic','.png','.ppm','.psd','.psp','.ras','.raw','.rle','.sct','.tga','.tif','.wmf','.wpg','.ACA','.acm','.acs','.ADE','.ADN','.ADP','.ace','.acf','.aif','.ipx','.jiff','.jpeg','.jpg', '.bin', '.exe']
