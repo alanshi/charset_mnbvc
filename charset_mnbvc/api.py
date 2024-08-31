@@ -32,6 +32,9 @@ def check_zh_en(data) -> bool:
     bool: True if the data contains Chinese and English characters, False otherwise.
     """
     encoding = check_by_cchardect(data)
+    if not encoding:
+        return False, 0
+
     data = data.decode(encoding)
     total_bytes = len(data)
     zh_en_count = 0
@@ -41,8 +44,8 @@ def check_zh_en(data) -> bool:
             zh_en_count += 1
 
     percentage = (zh_en_count / total_bytes) * 100
-    print(f'zh an en percentage: {percentage:.2f}%')
-    return True if percentage > TIPS_CONTEXT_RANGE else False
+    ret = True if percentage > TIPS_CONTEXT_RANGE else False
+    return ret, percentage
 
 
 def is_binary(file_path: str) -> bool:
