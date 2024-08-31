@@ -8,17 +8,48 @@ import cchardet
 import tqdm
 
 from .common_utils import print_table
-from .constant import (CCHARDECT_ENCODING_MAP, ENCODINGS, EXT_ENCODING,
-                       REGEX_FEATURE_ALL, TIPS_CONTEXT_RANGE, MAX_INVALID_BYTES_SIZE, BINARY_EXTENSIONS)
+from .constant import (
+    CCHARDECT_ENCODING_MAP,
+    ENCODINGS,
+    EXT_ENCODING,
+    REGEX_FEATURE_ALL,
+    TIPS_CONTEXT_RANGE,
+    MAX_INVALID_BYTES_SIZE,
+    BINARY_EXTENSIONS,
+    REGEX_ZH_EN,
+)
 
 # compile makes it more efficient
 re_char_check = compile(REGEX_FEATURE_ALL)
+re_zh_en = compile(REGEX_ZH_EN)
+
+def check_zh_en(data) -> bool:
+    """
+    Checks if the data contains Chinese and English characters.
+    Args:
+    data (str): The data to check.
+    Returns:
+    bool: True if the data contains Chinese and English characters, False otherwise.
+    """
+    encoding = check_by_cchardect(data)
+    data = data.decode(encoding)
+    total_bytes = len(data)
+    zh_en_count = 0
+    TIPS_CONTEXT_RANGE = 92
+    for char in data:
+        if re_zh_en.match(char):
+            zh_en_count += 1
+
+    percentage = (zh_en_count / total_bytes) * 100
+    print(f'zh an en percentage: {percentage:.2f}%')
+    return True if percentage > TIPS_CONTEXT_RANGE else False
+
 
 def is_binary(file_path: str) -> bool:
     """
     Checks if file is binary data
     Args:
-    data (bytes): The bytes to check.
+    file_path (str): The path to the file to check.
     Reyturns:
     bool: True is file are binary data, Flase otherwise.
     """

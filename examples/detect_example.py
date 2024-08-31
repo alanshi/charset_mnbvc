@@ -47,7 +47,20 @@ def detect_data_by_mnbvc():
     )
     print(coding_name)
 
+def detect_url():
+    import requests
+    url = "http://www.webpage.idv.tw/maillist/maillist3/skill/05/meta.htm"
+    data = requests.get(url).content
+    coding_name = api.get_cn_charset(
+        source_data=data,
+        source_type="data",
+        mode=2,
+    )
+    print(coding_name)
+
+
 if __name__ == '__main__':
+    #detect_url()
     detect_file()
     detect_files()
     detect_data()
