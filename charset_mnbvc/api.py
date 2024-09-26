@@ -38,7 +38,8 @@ def check_zh_en(data) -> bool:
     data = data.decode(encoding)
     total_bytes = len(data)
     zh_en_count = 0
-    TIPS_CONTEXT_RANGE = 92
+    # count the number of Chinese and English characters
+    TIPS_CONTEXT_RANGE = 98
     for char in data:
         if re_zh_en.match(char):
             zh_en_count += 1

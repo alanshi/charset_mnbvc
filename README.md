@@ -207,6 +207,23 @@ python pre_check.py -i /Users/alan/temp_test/20230101/aliyun.20230101.8.武侠�
 已将检测出错结果保存至 check_result_1706672423.csv 文件中,请查阅!
 ```
 
+#### 中英文混合编码检测工具
+```
+usage: python examples/check_zh_en.py
+tests/fixtures/test_sample_gbk_锟斤铐.txt False zh,en percentage:82.76%
+tests/fixtures/test_sample_euc-jp.txt False zh,en percentage:73.31%
+tests/fixtures/test4.txt False zh,en percentage:0.00%
+tests/fixtures/test5.txt False zh,en percentage:83.59%
+tests/fixtures/1045.txt True zh,en percentage:98.47%
+tests/fixtures/test_sample_gbk_with_cp936_1.txt True zh,en percentage:99.31%
+tests/fixtures/10.txt True zh,en percentage:98.79%
+tests/fixtures/test2.txt False zh,en percentage:40.00%
+tests/fixtures/test3.txt True zh,en percentage:100.00%
+tests/fixtures/test.txt True zh,en percentage:100.00%
+tests/fixtures/test_sample_big5.txt True zh,en percentage:100.00%
+tests/fixtures/18.txt False zh,en percentage:96.84%
+```
+
 #### wiki地址:
 https://wiki.mnbvc.org/doku.php/ylzq
 
