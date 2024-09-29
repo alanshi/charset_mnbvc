@@ -33,6 +33,16 @@ print(f"文件名: {file_path}, 编码: {coding_name}")
 
 ```
 
+##### 检测文档中英文比例
+```
+from charset_mnbvc import api
+
+file_path = "test.txt"
+ret, percentage = api.check_zh_en(file_path)
+print(f"中英文文档: {ret}, 比例: {percentage}")
+
+```
+
 ##### 获取二进制数据编码
 ```
 from charset_mnbvc import api
@@ -207,7 +217,7 @@ python pre_check.py -i /Users/alan/temp_test/20230101/aliyun.20230101.8.武侠�
 已将检测出错结果保存至 check_result_1706672423.csv 文件中,请查阅!
 ```
 
-#### 中英文混合编码检测工具
+#### 中英文混合编码检测测试范例
 ```
 usage: python examples/check_zh_en.py
 tests/fixtures/test_sample_gbk_锟斤铐.txt False zh,en percentage:82.76%
