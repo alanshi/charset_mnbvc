@@ -37,10 +37,10 @@ print(f"文件名: {file_path}, 编码: {coding_name}")
 ```
 from charset_mnbvc import api
 
-file_path = "test.txt"
-ret, percentage = api.check_zh_en(file_path)
-print(f"中英文文档: {ret}, 比例: {percentage}")
-
+with open("tests/fixtures/10.txt", "rb") as f:
+    data = f.read()
+    ret, percentage = api.check_zh_en(file_path)
+    print(f"是否为中英文文档: {ret}, 比例: {percentage}")
 ```
 
 ##### 获取二进制数据编码

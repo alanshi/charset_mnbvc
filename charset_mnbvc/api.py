@@ -17,11 +17,14 @@ from .constant import (
     MAX_INVALID_BYTES_SIZE,
     BINARY_EXTENSIONS,
     REGEX_ZH_EN,
+    EXCLUDED_UNICODE_CHARS
+
 )
 
 # compile makes it more efficient
 re_char_check = compile(REGEX_FEATURE_ALL)
 re_zh_en = compile(REGEX_ZH_EN)
+re_zh_en_exclude = compile(EXCLUDED_UNICODE_CHARS)
 
 def check_zh_en(data) -> bool:
     """
@@ -31,6 +34,7 @@ def check_zh_en(data) -> bool:
     Returns:
     bool: True if the data contains Chinese and English characters, False otherwise.
     """
+
     encoding = check_by_cchardect(data)
     if not encoding:
         return False, 0
@@ -41,8 +45,15 @@ def check_zh_en(data) -> bool:
     # count the number of Chinese and English characters
     TIPS_CONTEXT_RANGE = 96
     for char in data:
+
+        #要排除的字符集(包含对应的简体中文的繁体字)
         if re_zh_en.match(char):
             zh_en_count += 1
+        if re_zh_en_exclude.match(char):
+            zh_en_count -= 1
+
+
+
 
     percentage = (zh_en_count / total_bytes) * 100
     ret = True if percentage > TIPS_CONTEXT_RANGE else False

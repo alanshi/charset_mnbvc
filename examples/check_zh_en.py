@@ -24,7 +24,8 @@ def check_zh_en_by_file(file_path):
 
 if __name__ == "__main__":
     # load directory
-    folder_path = "tests/fixtures/"
-    file_path = "tests/fixtures/18.txt"
+
+    folder_path = "/Users/alan/Downloads/text.output"
+    # file_path = "tests/fixtures/18.txt"
     check_zh_en_by_folder(folder_path)
-    check_zh_en_by_file(file_path)
+    # check_zh_en_by_file(file_path)
