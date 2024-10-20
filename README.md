@@ -39,7 +39,7 @@ from charset_mnbvc import api
 
 with open("tests/fixtures/10.txt", "rb") as f:
     data = f.read()
-    ret, percentage = api.check_zh_en(file_path)
+    ret, percentage = api.check_zh_en(data)
     print(f"是否为中英文文档: {ret}, 比例: {percentage}")
 ```
 
