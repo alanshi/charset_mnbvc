@@ -10,7 +10,7 @@ if __name__ == "__main__":
     detector = language_fingerprints.LanguageDetector("data/language_fingerprints.json")
 
     # 测试
-    text1 = "这是一个中文句子。"
+    text1 = "中华人民共和国是世界上人口最多的国家。"
     text2 = "This is an English sentence."
     text3 = "これは日本語の文です。"
     text4 = "안녕하세요 저는 한국 사람입니다."
