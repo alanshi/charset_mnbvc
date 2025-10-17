@@ -119,6 +119,57 @@ coding_name = api.get_cn_charset(
 print(coding_name)
 ```
 
+
+```
+###### 语言指纹检测工具
+
+import os
+import sys
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from charset_mnbvc import language_fingerprints
+
+if __name__ == "__main__":
+    # 示例：加载已有指纹文件
+    detector = language_fingerprints.LanguageDetector("data/language_fingerprints.json")
+
+    # 测试
+    text1 = "中华人民共和国是世界上人口最多的国家。"
+    text2 = "This is an English sentence."
+    text3 = "これは日本語の文です。"
+    text4 = "안녕하세요 저는 한국 사람입니다."
+    text5 = "你好，我是一个中国人123542ABCDEWRSSSABCDEWRSSSABCDEWRSSSABCDEWRSSSABCDEWRSSSABCDEWRSSS3123123123。"
+
+    for txt in [text1, text2, text3, text4, text5]:
+        lang, score, all_scores = detector.detect(txt)
+        print(f"输入: {txt}")
+        print(f"预测语种: {lang}, 置信度: {score:.4f}")
+        print(f"所有分数: {all_scores}\n")
+
+返回结果
+输入: 中华人民共和国是世界上人口最多的国家。
+预测语种: Chinese_Simplified, 置信度: 0.8800
+所有分数: {'Latin': 0.0, 'Traditional_Chinese': 0.0, 'Japanese_Hiragana': 0.0, 'Simplified_Chinese': 0.008278027340893137, 'Korean_Hangul': 0.0, 'Cyrillic': 0.0, 'Thai': 0.0, 'Japanese_Katakana': 0.0}
+
+输入: This is an English sentence.
+预测语种: Latin, 置信度: 0.6048
+所有分数: {'Latin': 0.6048129797024254, 'Traditional_Chinese': 0.0, 'Japanese_Hiragana': 0.0, 'Simplified_Chinese': 0.0, 'Korean_Hangul': 0.0, 'Cyrillic': 0.0, 'Thai': 0.0, 'Japanese_Katakana': 0.0}
+
+输入: これは日本語の文です。
+预测语种: Japanese_Hiragana, 置信度: 0.3434
+所有分数: {'Latin': 0.0, 'Traditional_Chinese': 0.01056772297719242, 'Japanese_Hiragana': 0.3434195411527941, 'Simplified_Chinese': 0.0, 'Korean_Hangul': 0.0, 'Cyrillic': 0.0, 'Thai': 0.0, 'Japanese_Katakana': 0.0}
+
+输入: 안녕하세요 저는 한국 사람입니다.
+预测语种: Korean_Hangul, 置信度: 0.3301
+所有分数: {'Latin': 0.0, 'Traditional_Chinese': 0.0, 'Japanese_Hiragana': 0.0, 'Simplified_Chinese': 0.0, 'Korean_Hangul': 0.33008563064981494, 'Cyrillic': 0.0, 'Thai': 0.0, 'Japanese_Katakana': 0.0}
+
+输入: 你好，我是一个中国人123542ABCDEWRSSSABCDEWRSSSABCDEWRSSSABCDEWRSSSABCDEWRSSSABCDEWRSSS3123123123。
+预测语种: Latin, 置信度: 0.0329
+所有分数: {'Latin': 0.03294101403288453, 'Traditional_Chinese': 0.0, 'Japanese_Hiragana': 0.0, 'Simplified_Chinese': 0.0012485128992744006, 'Korean_Hangul': 0.0, 'Cyrillic': 0.0, 'Thai': 0.0, 'Japanese_Katakana': 0.0}
+
+```
+
 #### 测试数据:
 开发测试时 请参考 tests/fixtures里的所有文本数据进行测试，或者使用更多的数据样本进行测试，以下是数据样本网盘地址：
 
