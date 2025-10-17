@@ -120,9 +120,9 @@ print(coding_name)
 ```
 
 
-```
-###### 语言指纹检测工具
 
+###### 语言指纹检测工具
+```
 import os
 import sys
 
