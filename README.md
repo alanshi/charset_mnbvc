@@ -121,54 +121,60 @@ print(coding_name)
 
 
 
-###### 语言指纹检测工具
+###### 语言指纹检测工具（基于词组）
+
+从平行多语语料离线构建每语种的高频**词 / 词对 / 字 n-gram（词组）**指纹，
+运行时采用「脚本门控 + presence 朴素贝叶斯」两阶段判别，输出 BCP-47 语种标签
+（`zh-Hans` / `zh-Hant` / `ja` / `ko` / `en` / `fr` / `de` / `es` / `it` / `pt` / `id` / `vi` / `tr` / `ru` / `th`）。
+证据不足时返回 `Unknown`，不会伪造置信度。
+
 ```
-import os
-import sys
-
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 from charset_mnbvc import language_fingerprints
 
 if __name__ == "__main__":
-    # 示例：加载已有指纹文件
-    detector = language_fingerprints.LanguageDetector("data/language_fingerprints.json")
+    # 默认加载随包分发的指纹文件 charset_mnbvc/data/language_fingerprints.json
+    detector = language_fingerprints.LanguageDetector()
 
-    # 测试
-    text1 = "中华人民共和国是世界上人口最多的国家。"
-    text2 = "This is an English sentence."
-    text3 = "これは日本語の文です。"
-    text4 = "안녕하세요 저는 한국 사람입니다."
-    text5 = "你好，我是一个中国人123542ABCDEWRSSSABCDEWRSSSABCDEWRSSSABCDEWRSSSABCDEWRSSSABCDEWRSSS3123123123。"
-
-    for txt in [text1, text2, text3, text4, text5]:
+    samples = [
+        "中华人民共和国是世界上人口最多的国家。",
+        "中華人民共和國是世界上人口最多的國家。",
+        "This is an English sentence.",
+        "これは日本語の文です。",
+        "안녕하세요 저는 한국 사람입니다.",
+    ]
+    for txt in samples:
         lang, score, all_scores = detector.detect(txt)
         print(f"输入: {txt}")
         print(f"预测语种: {lang}, 置信度: {score:.4f}")
         print(f"所有分数: {all_scores}\n")
+```
 
 返回结果
 输入: 中华人民共和国是世界上人口最多的国家。
-预测语种: Chinese_Simplified, 置信度: 0.8800
-所有分数: {'Latin': 0.0, 'Traditional_Chinese': 0.0, 'Japanese_Hiragana': 0.0, 'Simplified_Chinese': 0.008278027340893137, 'Korean_Hangul': 0.0, 'Cyrillic': 0.0, 'Thai': 0.0, 'Japanese_Katakana': 0.0}
+预测语种: zh-Hans, 置信度: 1.0
+
+输入: 中華人民共和國是世界上人口最多的國家。
+预测语种: zh-Hant, 置信度: 1.0
 
 输入: This is an English sentence.
-预测语种: Latin, 置信度: 0.6048
-所有分数: {'Latin': 0.6048129797024254, 'Traditional_Chinese': 0.0, 'Japanese_Hiragana': 0.0, 'Simplified_Chinese': 0.0, 'Korean_Hangul': 0.0, 'Cyrillic': 0.0, 'Thai': 0.0, 'Japanese_Katakana': 0.0}
+预测语种: en, 置信度: 1.0
 
 输入: これは日本語の文です。
-预测语种: Japanese_Hiragana, 置信度: 0.3434
-所有分数: {'Latin': 0.0, 'Traditional_Chinese': 0.01056772297719242, 'Japanese_Hiragana': 0.3434195411527941, 'Simplified_Chinese': 0.0, 'Korean_Hangul': 0.0, 'Cyrillic': 0.0, 'Thai': 0.0, 'Japanese_Katakana': 0.0}
+预测语种: ja, 置信度: 1.0
 
 输入: 안녕하세요 저는 한국 사람입니다.
-预测语种: Korean_Hangul, 置信度: 0.3301
-所有分数: {'Latin': 0.0, 'Traditional_Chinese': 0.0, 'Japanese_Hiragana': 0.0, 'Simplified_Chinese': 0.0, 'Korean_Hangul': 0.33008563064981494, 'Cyrillic': 0.0, 'Thai': 0.0, 'Japanese_Katakana': 0.0}
+预测语种: ko, 置信度: 1.0
+```
 
-输入: 你好，我是一个中国人123542ABCDEWRSSSABCDEWRSSSABCDEWRSSSABCDEWRSSSABCDEWRSSSABCDEWRSSS3123123123。
-预测语种: Latin, 置信度: 0.0329
-所有分数: {'Latin': 0.03294101403288453, 'Traditional_Chinese': 0.0, 'Japanese_Hiragana': 0.0, 'Simplified_Chinese': 0.0012485128992744006, 'Korean_Hangul': 0.0, 'Cyrillic': 0.0, 'Thai': 0.0, 'Japanese_Katakana': 0.0}
+重新构建指纹（需先准备平行多语语料）：
 
 ```
+python data/fingerprints_build.py \
+    --corpus data_pack/Genshin_AnimeGameData.jsonl \
+    --out charset_mnbvc/data/language_fingerprints.json \
+    --max-lines 15000 --top-k 10000
+```
+
 
 #### 测试数据:
 开发测试时 请参考 tests/fixtures里的所有文本数据进行测试，或者使用更多的数据样本进行测试，以下是数据样本网盘地址：
@@ -291,3 +297,19 @@ https://wiki.mnbvc.org/doku.php/ylzq
 #### GUI工具地址：
 用于辅助编码检测转换的开发工作
 https://github.com/alanshi/mnbvc-charset-tool
+
+#### 开发环境与测试:
+使用 uv 搭建可编辑开发环境并运行测试:
+
+```bash
+uv venv .venv
+uv pip install -r requirements.txt --python .venv/bin/python
+uv pip install -e ".[dev]" --python .venv/bin/python
+
+# 运行测试（二选一）
+.venv/bin/python -m pytest -q
+.venv/bin/python -m unittest tests.test_language_fingerprints -v
+```
+
+> 提示: 直接在项目根目录用 `python -m pytest` / `python -m unittest` 运行即可；
+> 若用 `python tests/xxx.py` 直接执行脚本，需先 `pip install -e .`，否则根目录不在导入路径上。

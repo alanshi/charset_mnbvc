@@ -6,18 +6,25 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from charset_mnbvc import language_fingerprints
 
 if __name__ == "__main__":
-    # 示例：加载已有指纹文件
-    detector = language_fingerprints.LanguageDetector("data/language_fingerprints.json")
+    # 默认加载随包分发的指纹文件 charset_mnbvc/data/language_fingerprints.json
+    detector = language_fingerprints.LanguageDetector()
 
-    # 测试
-    text1 = "中华人民共和国是世界上人口最多的国家。"
-    text2 = "This is an English sentence."
-    text3 = "これは日本語の文です。"
-    text4 = "안녕하세요 저는 한국 사람입니다."
-    text5 = "你好，我是一个中国人123542ABCDEWRSSSABCDEWRSSSABCDEWRSSSABCDEWRSSSABCDEWRSSSABCDEWRSSS3123123123。"
+    # 测试：基于语料词组（词/词对/字 n-gram）区分语种，标签为 BCP-47
+    samples = {
+        "zh-Hans": "中华人民共和国是世界上人口最多的国家。",
+        "zh-Hant": "中華人民共和國是世界上人口最多的國家。",
+        "ja": "これは日本語の文です。",
+        "ko": "안녕하세요 저는 한국 사람입니다.",
+        "en": "This is an English sentence.",
+        "fr": "Le président de la République française a annoncé une nouvelle réforme.",
+        "de": "Der Präsident der Französischen Republik kündigte eine neue Reform an.",
+        "ru": "Президент Французской Республики объявил о новой реформе.",
+        "th": "เตรียมตัวให้พร้อมทั้งสภาพร่างกายและจิตใจก่อนบิน",
+    }
 
-    for txt in [text1, text2, text3, text4, text5]:
-        lang, score, all_scores = detector.detect(txt)
-        print(f"输入: {txt}")
-        print(f"预测语种: {lang}, 置信度: {score:.4f}")
-        print(f"所有分数: {all_scores}\n")
+    for expected, text in samples.items():
+        lang, score, all_scores = detector.detect(text)
+        flag = "OK" if lang == expected else "!!"
+        print(f"[{flag}] 输入: {text}")
+        print(f"      期望: {expected}, 预测语种: {lang}, 置信度: {score:.4f}")
+        print(f"      所有分数: {all_scores}\n")
