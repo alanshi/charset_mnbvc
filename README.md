@@ -128,42 +128,76 @@ print(coding_name)
 （`zh-Hans` / `zh-Hant` / `ja` / `ko` / `en` / `fr` / `de` / `es` / `it` / `pt` / `id` / `vi` / `tr` / `ru` / `th`）。
 证据不足时返回 `Unknown`，不会伪造置信度。
 
+运行 `python examples/lang_fingerperint.py`（默认加载包内指纹 `charset_mnbvc/data/language_fingerprints.json`）：
+
 ```
+import os
+import sys
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from charset_mnbvc import language_fingerprints
 
 if __name__ == "__main__":
-    # 默认加载随包分发的指纹文件 charset_mnbvc/data/language_fingerprints.json
     detector = language_fingerprints.LanguageDetector()
 
-    samples = [
-        "中华人民共和国是世界上人口最多的国家。",
-        "中華人民共和國是世界上人口最多的國家。",
-        "This is an English sentence.",
-        "これは日本語の文です。",
-        "안녕하세요 저는 한국 사람입니다.",
-    ]
-    for txt in samples:
-        lang, score, all_scores = detector.detect(txt)
-        print(f"输入: {txt}")
-        print(f"预测语种: {lang}, 置信度: {score:.4f}")
-        print(f"所有分数: {all_scores}\n")
+    samples = {
+        "zh-Hans": "中华人民共和国是世界上人口最多的国家。",
+        "zh-Hant": "中華人民共和國是世界上人口最多的國家。",
+        "ja": "これは日本語の文です。",
+        "ko": "안녕하세요 저는 한국 사람입니다.",
+        "en": "This is an English sentence.",
+        "fr": "Le président de la République française a annoncé une nouvelle réforme.",
+        "de": "Der Präsident der Französischen Republik kündigte eine neue Reform an.",
+        "ru": "Президент Французской Республики объявил о новой реформе.",
+        "th": "เตรียมตัวให้พร้อมทั้งสภาพร่างกายและจิตใจก่อนบิน",
+    }
+
+    for expected, text in samples.items():
+        lang, score, all_scores = detector.detect(text)
+        flag = "OK" if lang == expected else "!!"
+        print(f"[{flag}] 输入: {text}")
+        print(f"      期望: {expected}, 预测语种: {lang}, 置信度: {score:.4f}")
+        print(f"      所有分数: {all_scores}\n")
 ```
 
 返回结果
-输入: 中华人民共和国是世界上人口最多的国家。
-预测语种: zh-Hans, 置信度: 1.0
+```
+[OK] 输入: 中华人民共和国是世界上人口最多的国家。
+      期望: zh-Hans, 预测语种: zh-Hans, 置信度: 1.0000
+      所有分数: {'zh-Hant': 0.0, 'de': 0.0, 'en': 0.0, 'es': 0.0, 'fr': 0.0, 'id': 0.0, 'it': 0.0, 'ja': 0.0, 'ko': 0.0, 'pt': 0.0, 'ru': 0.0, 'th': 0.0, 'vi': 0.0, 'zh-Hans': 1.0, 'tr': 0.0}
 
-输入: 中華人民共和國是世界上人口最多的國家。
-预测语种: zh-Hant, 置信度: 1.0
+[OK] 输入: 中華人民共和國是世界上人口最多的國家。
+      期望: zh-Hant, 预测语种: zh-Hant, 置信度: 1.0000
+      所有分数: {'zh-Hant': 1.0, 'de': 0.0, 'en': 0.0, 'es': 0.0, 'fr': 0.0, 'id': 0.0, 'it': 0.0, 'ja': 0.0, 'ko': 0.0, 'pt': 0.0, 'ru': 0.0, 'th': 0.0, 'vi': 0.0, 'zh-Hans': 0.0, 'tr': 0.0}
 
-输入: This is an English sentence.
-预测语种: en, 置信度: 1.0
+[OK] 输入: これは日本語の文です。
+      期望: ja, 预测语种: ja, 置信度: 1.0000
+      所有分数: {'zh-Hant': 0.0, 'de': 0.0, 'en': 0.0, 'es': 0.0, 'fr': 0.0, 'id': 0.0, 'it': 0.0, 'ja': 1.0, 'ko': 0.0, 'pt': 0.0, 'ru': 0.0, 'th': 0.0, 'vi': 0.0, 'zh-Hans': 0.0, 'tr': 0.0}
 
-输入: これは日本語の文です。
-预测语种: ja, 置信度: 1.0
+[OK] 输入: 안녕하세요 저는 한국 사람입니다.
+      期望: ko, 预测语种: ko, 置信度: 1.0000
+      所有分数: {'zh-Hant': 0.0, 'de': 0.0, 'en': 0.0, 'es': 0.0, 'fr': 0.0, 'id': 0.0, 'it': 0.0, 'ja': 0.0, 'ko': 1.0, 'pt': 0.0, 'ru': 0.0, 'th': 0.0, 'vi': 0.0, 'zh-Hans': 0.0, 'tr': 0.0}
 
-输入: 안녕하세요 저는 한국 사람입니다.
-预测语种: ko, 置信度: 1.0
+[OK] 输入: This is an English sentence.
+      期望: en, 预测语种: en, 置信度: 1.0000
+      所有分数: {'zh-Hant': 0.0, 'de': 0.0, 'en': 1.0, 'es': 0.0, 'fr': 0.0, 'id': 0.0, 'it': 0.0, 'ja': 0.0, 'ko': 0.0, 'pt': 0.0, 'ru': 0.0, 'th': 0.0, 'vi': 0.0, 'zh-Hans': 0.0, 'tr': 0.0}
+
+[OK] 输入: Le président de la République française a annoncé une nouvelle réforme.
+      期望: fr, 预测语种: fr, 置信度: 1.0000
+      所有分数: {'zh-Hant': 0.0, 'de': 0.0, 'en': 0.0, 'es': 0.0, 'fr': 1.0, 'id': 0.0, 'it': 0.0, 'ja': 0.0, 'ko': 0.0, 'pt': 0.0, 'ru': 0.0, 'th': 0.0, 'vi': 0.0, 'zh-Hans': 0.0, 'tr': 0.0}
+
+[OK] 输入: Der Präsident der Französischen Republik kündigte eine neue Reform an.
+      期望: de, 预测语种: de, 置信度: 1.0000
+      所有分数: {'zh-Hant': 0.0, 'de': 1.0, 'en': 0.0, 'es': 0.0, 'fr': 0.0, 'id': 0.0, 'it': 0.0, 'ja': 0.0, 'ko': 0.0, 'pt': 0.0, 'ru': 0.0, 'th': 0.0, 'vi': 0.0, 'zh-Hans': 0.0, 'tr': 0.0}
+
+[OK] 输入: Президент Французской Республики объявил о новой реформе.
+      期望: ru, 预测语种: ru, 置信度: 1.0000
+      所有分数: {'zh-Hant': 0.0, 'de': 0.0, 'en': 0.0, 'es': 0.0, 'fr': 0.0, 'id': 0.0, 'it': 0.0, 'ja': 0.0, 'ko': 0.0, 'pt': 0.0, 'ru': 1.0, 'th': 0.0, 'vi': 0.0, 'zh-Hans': 0.0, 'tr': 0.0}
+
+[OK] 输入: เตรียมตัวให้พร้อมทั้งสภาพร่างกายและจิตใจก่อนบิน
+      期望: th, 预测语种: th, 置信度: 1.0000
+      所有分数: {'zh-Hant': 0.0, 'de': 0.0, 'en': 0.0, 'es': 0.0, 'fr': 0.0, 'id': 0.0, 'it': 0.0, 'ja': 0.0, 'ko': 0.0, 'pt': 0.0, 'ru': 0.0, 'th': 1.0, 'vi': 0.0, 'zh-Hans': 0.0, 'tr': 0.0}
 ```
 
 重新构建指纹（需先准备平行多语语料）：
