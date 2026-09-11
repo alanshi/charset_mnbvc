@@ -1,125 +1,144 @@
-import collections
+"""Phrase-based language identification.
+
+Replaces the previous character-unigram cosine detector with a two-stage model:
+
+1. **Script gate** - fast, deterministic.  Counts characters per Unicode script,
+   rejects text with no meaningful script, applies hard locks (kana => Japanese,
+   Hangul => Korean) and narrows the candidate languages to those sharing the
+   dominant scripts.  Single-candidate texts short-circuit without scoring.
+2. **Phrase model** - presence-based multinomial Naive Bayes over script-prefixed
+   word / phrase / n-gram features (see :mod:`charset_mnbvc.langid_tokenizer`).
+   Confidence is a calibrated softmax posterior over the candidate languages.
+
+Labels are BCP-47 language tags (``zh-Hans``, ``zh-Hant``, ``ja``, ``ko``, ``en``,
+``fr`` ...).  ``Unknown`` is returned when the evidence is too weak.
+"""
+
 import json
 import math
-import re
+import os
+
+from .langid_tokenizer import extract_features, script_counts
+
+DEFAULT_FINGERPRINT_PATH = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "data", "language_fingerprints.json"
+)
+
+# Kana is unique to Japanese: any meaningful kana share locks the language.
+_KANA_LOCK_RATIO = 0.05
+# Hangul dominance locks Korean.
+_HANGUL_LOCK_RATIO = 0.20
+
 
 class LanguageDetector:
-    def __init__(self, fingerprint_path="language_fingerprints.json",
-                 simplified_chars=None, traditional_chars=None):
+    def __init__(self, fingerprint_path=None, simplified_chars=None,
+                 traditional_chars=None):
+        # ``simplified_chars`` / ``traditional_chars`` are kept for backward
+        # compatibility with the old character-based API and are ignored.
+        path = fingerprint_path or DEFAULT_FINGERPRINT_PATH
+        with open(path, "r", encoding="utf-8") as f:
+            raw = json.load(f)
 
-        with open(fingerprint_path, "r", encoding="utf-8") as f:
-            raw_fp = json.load(f)
+        self.meta = raw.get("meta", {})
+        self.languages = raw.get("languages", {})
 
-        # 过滤掉 Unknown / Other 类别
-        self.fingerprints = {
-            k: v for k, v in raw_fp.items()
-            if k.lower() not in ("unknown", "other")
-        }
+        self.floor = float(self.meta.get("floor", 1e-8))
+        self.log_floor = math.log(self.floor)
+        self.default_threshold = float(self.meta.get("threshold", 0.25))
+        self.default_margin = float(self.meta.get("margin", 0.05))
+        self.min_script_ratio = float(self.meta.get("min_script_ratio", 0.05))
+        self.script_to_langs = self.meta.get("scripts", {})
 
-        self.simplified_chars = simplified_chars or set()
-        self.traditional_chars = traditional_chars or set()
+        # Pre-compute log-probabilities once at load time.
+        self._logp = {}
+        for lang, data in self.languages.items():
+            self._logp[lang] = {
+                feature: math.log(prob)
+                for feature, prob in data.get("features", {}).items()
+                if prob > 0
+            }
 
-    def _is_meaningful(self, ch):
-        """只保留语言文字，不要标点符号"""
-        cp = ord(ch)
-        # 中文、日文、韩文、希腊、阿拉伯、拉丁、西里尔等
-        valid = (
-            0x4E00 <= cp <= 0x9FFF or
-            0x3400 <= cp <= 0x4DBF or
-            0x3040 <= cp <= 0x30FF or
-            0xAC00 <= cp <= 0xD7AF or
-            0x0400 <= cp <= 0x052F or
-            0x0370 <= cp <= 0x03FF or
-            0x0000 <= cp <= 0x02AF or
-            0x0600 <= cp <= 0x06FF or
-            0x0590 <= cp <= 0x05FF or
-            0x0900 <= cp <= 0x097F or
-            0x0E00 <= cp <= 0x0E7F
-        )
-        return valid and re.match(r'\w', ch)
+    # ------------------------------------------------------------------
+    # Stage 1: script gate
+    # ------------------------------------------------------------------
+    def _candidates(self, counts):
+        total = sum(counts.values())
+        if total <= 0:
+            return set()
 
-    def _text_distribution(self, text, top_n=500):
-        chars = [ch for ch in text if self._is_meaningful(ch)]
-        if not chars:
-            return {}
-        counter = collections.Counter(chars)
-        most_common = counter.most_common(top_n)
-        total = sum(freq for _, freq in most_common)
-        return {ch: freq / total for ch, freq in most_common}
+        known = set(self.languages)
+        kana = counts.get("kana", 0)
+        han = counts.get("han", 0)
 
-    def _cosine_similarity(self, dist1, dist2):
-        all_chars = set(dist1) | set(dist2)
-        dot = sum(dist1.get(c, 0) * dist2.get(c, 0) for c in all_chars)
-        norm1 = math.sqrt(sum(v * v for v in dist1.values()))
-        norm2 = math.sqrt(sum(v * v for v in dist2.values()))
-        return dot / (norm1 * norm2 + 1e-9)
+        # Hard locks first: kana can only be Japanese, Hangul dominance Korean.
+        if kana and kana / float(kana + han or 1) >= _KANA_LOCK_RATIO:
+            return {"ja"} & known
+        if counts.get("hang", 0) / float(total) >= _HANGUL_LOCK_RATIO:
+            return {"ko"} & known
 
-    def _cjk_ratio(self, text):
-        total = len(text)
-        cjk = sum(0x4E00 <= ord(ch) <= 0x9FFF for ch in text)
-        return cjk / total if total else 0
+        candidates = set()
+        for script, count in counts.items():
+            if count / float(total) >= self.min_script_ratio:
+                candidates |= set(self.script_to_langs.get(script, ()))
+        return candidates & known
 
-    def _estimate_chinese_variant(self, text):
-        simp = trad = 0
-        for ch in text:
-            if ch in self.simplified_chars:
-                simp += 1
-            elif ch in self.traditional_chars:
-                trad += 1
-        if simp + trad == 0:
-            return "Chinese_Mixed"
-        if simp > trad * 1.3:
-            return "Chinese_Simplified"
-        elif trad > simp * 1.3:
-            return "Chinese_Traditional"
-        return "Chinese_Mixed"
-
-    # ------------------------------
-    # 主检测逻辑
-    # ------------------------------
-    def detect(self, text, confidence_threshold=0.12):
-        if not text.strip():
-            return "Unknown", 0.0, {}
-
-        dist = self._text_distribution(text)
-        if not dist:
-            return "Unknown", 0.0, {}
-
+    # ------------------------------------------------------------------
+    # Stage 2: presence-based multinomial Naive Bayes
+    # ------------------------------------------------------------------
+    def _nb_scores(self, features, candidates):
         scores = {}
-        for lang, fp in self.fingerprints.items():
-            sim = self._cosine_similarity(dist, fp["weights"])
+        for lang in candidates:
+            logp = self._logp[lang]
+            score = 0.0
+            for feature in features:
+                value = logp.get(feature)
+                score += value if value is not None else self.log_floor
+            scores[lang] = score
+        return scores
 
-            # 对中文系语言增强置信度
-            if "Chinese" in lang or "CJK" in lang:
-                sim *= 1.4
-            scores[lang] = sim
+    @staticmethod
+    def _softmax(scores):
+        top = max(scores.values())
+        exps = {lang: math.exp(value - top) for lang, value in scores.items()}
+        total = sum(exps.values())
+        if total <= 0:
+            n = len(scores)
+            return {lang: 1.0 / n for lang in scores}
+        return {lang: value / total for lang, value in exps.items()}
 
-        if not scores:
+    # ------------------------------------------------------------------
+    # Public API (unchanged signature / return shape)
+    # ------------------------------------------------------------------
+    def detect(self, text, confidence_threshold=None):
+        """Detect the language of ``text``.
+
+        Returns ``(label, confidence, scores)`` where ``scores`` maps every known
+        language to a calibrated posterior (0.0 for non-candidates).
+        """
+        if not text or not text.strip():
             return "Unknown", 0.0, {}
 
-        best_lang = max(scores, key=scores.get)
-        best_score = scores[best_lang]
+        features = extract_features(text)
+        if not features:
+            return "Unknown", 0.0, {}
 
-        # ---- CJK 特殊增强 ----
-        cjk_ratio = self._cjk_ratio(text)
-        if cjk_ratio > 0.4 and any(k in best_lang for k in ["Chinese", "CJK"]):
-            best_score *= (1 + 0.6 * cjk_ratio)
+        candidates = self._candidates(script_counts(text))
+        if not candidates:
+            return "Unknown", 0.0, {}
 
-        # ---- 简繁体细分 ----
-        if "Chinese" in best_lang or "CJK" in best_lang:
-            zh_variant = self._estimate_chinese_variant(text)
-            if zh_variant != "Chinese_Mixed":
-                best_lang = zh_variant
-                best_score *= 1.05
+        posterior = self._softmax(self._nb_scores(features, candidates))
 
-        # ---- Unknown 抑制策略 ----
-        # 如果中文比例高，直接判定为中文
-        if cjk_ratio > 0.6 and best_score < confidence_threshold:
-            best_lang = "Chinese_Simplified"
-            best_score = 0.88
+        best = max(posterior, key=posterior.get)
+        best_score = posterior[best]
+        ordered = sorted(posterior.values(), reverse=True)
+        margin = ordered[0] - ordered[1] if len(ordered) > 1 else 1.0
 
-        # 如果最高分太低，也宁可返回置信度低的语言，而不是 Unknown
-        if best_score < confidence_threshold:
-            best_lang = best_lang or "Chinese_Simplified"
+        threshold = (self.default_threshold if confidence_threshold is None
+                     else float(confidence_threshold))
 
-        return best_lang, round(best_score, 4), scores
+        all_scores = {lang: round(posterior.get(lang, 0.0), 6)
+                      for lang in self.languages}
+
+        if best_score < threshold or margin < self.default_margin:
+            return "Unknown", round(best_score, 4), all_scores
+        return best, round(best_score, 4), all_scores

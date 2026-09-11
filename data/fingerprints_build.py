@@ -1,173 +1,238 @@
+"""Build phrase-based language fingerprints from a parallel multilingual corpus.
+
+The reference corpus is a JSONL file where every line contains the *same*
+content translated into many languages, one field per language, e.g.::
+
+    {"zh_text": "...", "cht_text": "...", "en_text": "...", "ja_text": "...",
+     "扩展字段": "{\"other_texts\": {\"tr\": \"...\"}}", ...}
+
+Field name -> language mapping is declared in ``FIELD_TO_LABEL``.  Features are
+extracted with the *shared* tokenizer (``charset_mnbvc.langid_tokenizer``) so the
+fingerprints are guaranteed to match what the runtime detector extracts.
+
+Usage::
+
+    python data/fingerprints_build.py \
+        --corpus data_pack/Genshin_AnimeGameData.jsonl \
+        --out charset_mnbvc/data/language_fingerprints.json \
+        --max-lines 15000
+
+The output is a JSON document::
+
+    {
+      "meta": {
+        "schema": 2, "built_at": ..., "corpus": ..., "max_lines": ...,
+        "top_k": ..., "floor": ..., "threshold": ..., "margin": ...,
+        "min_script_ratio": ...,
+        "languages": [...], "scripts": {"latn": [...], "han": [...], ...}
+      },
+      "languages": {
+        "de": {"total": <int>, "features": {"lat:der": <p>, ...}},
+        ...
+      }
+    }
+"""
+
+import argparse
 import collections
 import json
+import os
+import sys
+import time
 
-# -----------------------------
-# 定义 Unicode 范围 -> 语言映射
-# -----------------------------
-LANGUAGE_RANGES = {
-    "Latin": [
-        (0x0000, 0x007F),
-        (0x0080, 0x00FF),
-        (0x0100, 0x017F),
-        (0x0180, 0x024F),
-        (0x1E00, 0x1EFF),
-    ],
-    "CJK": [
-        (0x4E00, 0x9FFF),
-        (0x3400, 0x4DBF),
-        (0x20000, 0x2A6DF),
-        (0x2A700, 0x2B73F),
-        (0x2B740, 0x2B81F),
-        (0x2B820, 0x2CEAF),
-        (0x2CEB0, 0x2EBEF),
-        (0x30000, 0x3134F),
-    ],
-    "Japanese_Hiragana": [(0x3040, 0x309F)],
-    "Japanese_Katakana": [
-        (0x30A0, 0x30FF),
-        (0x31F0, 0x31FF),
-        (0xFF65, 0xFF9F),
-    ],
-    "Korean_Hangul": [
-        (0xAC00, 0xD7A3),
-        (0x1100, 0x11FF),
-        (0x3130, 0x318F),
-    ],
-    "Cyrillic": [
-        (0x0400, 0x04FF),
-        (0x0500, 0x052F),
-        (0x2DE0, 0x2DFF),
-        (0xA640, 0xA69F),
-    ],
-    "Greek": [
-        (0x0370, 0x03FF),
-        (0x1F00, 0x1FFF),
-    ],
-    "Arabic": [
-        (0x0600, 0x06FF),
-        (0x0750, 0x077F),
-        (0x08A0, 0x08FF),
-        (0xFB50, 0xFDFF),
-        (0xFE70, 0xFEFF),
-    ],
-    "Hebrew": [(0x0590, 0x05FF)],
-    "Devanagari": [
-        (0x0900, 0x097F),
-        (0xA8E0, 0xA8FF),
-    ],
-    "Thai": [(0x0E00, 0x0E7F)],
-    "Tibetan": [(0x0F00, 0x0FFF)],
-    "Georgian": [
-        (0x10A0, 0x10FF),
-        (0x2D00, 0x2D2F),
-    ],
-    "Armenian": [(0x0530, 0x058F)],
+_REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _REPO_ROOT not in sys.path:
+    sys.path.insert(0, _REPO_ROOT)
+
+from charset_mnbvc.langid_tokenizer import count_features  # noqa: E402
+
+# Field name -> BCP-47 label.
+FIELD_TO_LABEL = {
+    "ar_text": "ar",
+    "cht_text": "zh-Hant",
+    "de_text": "de",
+    "en_text": "en",
+    "eo_text": "eo",
+    "es_text": "es",
+    "fr_text": "fr",
+    "he_text": "he",
+    "id_text": "id",
+    "it_text": "it",
+    "ja_text": "ja",
+    "ko_text": "ko",
+    "nl_text": "nl",
+    "pt_text": "pt",
+    "ru_text": "ru",
+    "sv_text": "sv",
+    "th_text": "th",
+    "vi_text": "vi",
+    "zh_text": "zh-Hans",
 }
 
+# Languages nested inside the "扩展字段" -> "other_texts" object.
+OTHER_LABELS = {"tr": "tr"}
 
-# -----------------------------
-# 简繁体参考表
-# -----------------------------
+# Primary script(s) used by each language; written into meta so the runtime
+# script gate is fully data-driven.
+LANG_SCRIPTS = {
+    "ar": ["arab"],
+    "de": ["latn"],
+    "en": ["latn"],
+    "eo": ["latn"],
+    "es": ["latn"],
+    "fr": ["latn"],
+    "he": ["hebr"],
+    "id": ["latn"],
+    "it": ["latn"],
+    "ja": ["han", "kana"],
+    "ko": ["hang"],
+    "nl": ["latn"],
+    "pt": ["latn"],
+    "ru": ["cyrl"],
+    "sv": ["latn"],
+    "th": ["thai"],
+    "tr": ["latn"],
+    "vi": ["latn"],
+    "zh-Hans": ["han"],
+    "zh-Hant": ["han"],
+}
 
+EXT_FIELD = "扩展字段"
 
-def load_opencc_sets(st_file="STCharacters.txt", ts_file="TSCharacters.txt"):
-    simplified_chars = set()
-    traditional_chars = set()
-
-    # 简体 -> 繁体
-    with open(st_file, "r", encoding="utf-8") as f:
-        for line in f:
-            parts = line.strip().split()
-            if len(parts) == 2:
-                s, t = parts
-                simplified_chars.add(s)
-                traditional_chars.add(t)
-
-    # 反向补充（防止漏字）
-    with open(ts_file, "r", encoding="utf-8") as f:
-        for line in f:
-            parts = line.strip().split()
-            if len(parts) == 2:
-                t, s = parts
-                simplified_chars.add(s)
-                traditional_chars.add(t)
-
-    print(f"✅ Loaded {len(simplified_chars)} simplified and {len(traditional_chars)} traditional chars.")
-    return simplified_chars, traditional_chars
-
-
-opencc_sets = load_opencc_sets(
-    "data/STCharacters.txt",
-    "data/TSCharacters.txt"
-)
-
-SIMPLIFIED_CHARS = opencc_sets[0]
-TRADITIONAL_CHARS = opencc_sets[1]
+# Drop singleton features every this many lines to bound memory while streaming.
+_PRUNE_EVERY = 3000
 
 
-def detect_language(char):
-    """检测字符所属语言类别"""
-    codepoint = ord(char)
-    for lang, ranges in LANGUAGE_RANGES.items():
-        for start, end in ranges:
-            if start <= codepoint <= end:
-                return lang
-    return "Other"
+def build(corpus_path, output_path, max_lines, top_k, floor, threshold,
+          margin, min_script_ratio, prune):
+    counters = collections.defaultdict(collections.Counter)
+    lines = 0
 
+    with open(corpus_path, "r", encoding="utf-8") as f:
+        for raw_line in f:
+            if lines >= max_lines:
+                break
+            lines += 1
+            raw_line = raw_line.strip()
+            if not raw_line:
+                continue
+            try:
+                obj = json.loads(raw_line)
+            except ValueError:
+                continue
 
-def classify_chinese_char(char):
-    """根据字符判断简繁体"""
-    if char in SIMPLIFIED_CHARS:
-        return "Simplified_Chinese"
-    elif char in TRADITIONAL_CHARS:
-        return "Traditional_Chinese"
-    else:
-        return "Chinese_Unknown"
+            for field, label in FIELD_TO_LABEL.items():
+                text = obj.get(field)
+                if text:
+                    counters[label].update(count_features(text))
 
+            ext = obj.get(EXT_FIELD)
+            if ext:
+                try:
+                    nested = json.loads(ext)
+                except (ValueError, TypeError):
+                    nested = {}
+                for key, value in (nested.get("other_texts") or {}).items():
+                    label = OTHER_LABELS.get(key)
+                    if label and isinstance(value, str) and value:
+                        counters[label].update(count_features(value))
 
-def build_fingerprints(file_path, top_n=500, encoding="utf-8", output_json="language_fingerprints.json"):
-    """
-    从混合语料中提取各语种（含简体/繁体）的高频字符指纹
-    """
-    with open(file_path, "r", encoding=encoding) as f:
-        text = f.read()
+            if prune and lines % _PRUNE_EVERY == 0:
+                for label, counter in list(counters.items()):
+                    if len(counter) > 100000:
+                        counters[label] = collections.Counter(
+                            {k: v for k, v in counter.items() if v > 1}
+                        )
+                print("  ...processed %d lines" % lines, flush=True)
 
-    counter = collections.Counter(text)
-    lang_counters = {}
-
-    for char, freq in counter.items():
-        if char.strip() == "":
+    languages = {}
+    scripts = collections.defaultdict(set)
+    for label, counter in counters.items():
+        if not counter:
             continue
-        lang = detect_language(char)
-
-        # 如果是CJK区域，再判断简繁体
-        if lang == "CJK":
-            sub_lang = classify_chinese_char(char)
-            lang = sub_lang if sub_lang != "Chinese_Unknown" else "CJK"
-
-        if lang not in lang_counters:
-            lang_counters[lang] = collections.Counter()
-        lang_counters[lang][char] += freq
-
-    fingerprints = {}
-    for lang, cnt in lang_counters.items():
-        most_common = cnt.most_common(top_n)
-        total = sum(freq for _, freq in most_common)
-        fingerprints[lang] = {
-            "ordered": [char for char, _ in most_common],
-            "weights": {char: round(freq / total, 6) for char, freq in most_common}
+        total = sum(counter.values())
+        features = {
+            feature: round(count / float(total), 9)
+            for feature, count in counter.most_common(top_k)
         }
+        languages[label] = {"total": total, "features": features}
+        for script in LANG_SCRIPTS.get(label, []):
+            scripts[script].add(label)
 
-    with open(output_json, "w", encoding="utf-8") as f:
-        json.dump(fingerprints, f, ensure_ascii=False, indent=2)
+    meta = {
+        "schema": 2,
+        "built_at": time.strftime("%Y-%m-%d %H:%M:%S"),
+        "corpus": os.path.basename(corpus_path),
+        "max_lines": lines,
+        "top_k": top_k,
+        "floor": floor,
+        "threshold": threshold,
+        "margin": margin,
+        "min_script_ratio": min_script_ratio,
+        "languages": sorted(languages.keys()),
+        "scripts": {name: sorted(langs) for name, langs in sorted(scripts.items())},
+    }
 
-    print(f"指纹已生成 ✅ -> {output_json}")
-    print("包含语种:", ", ".join(sorted(fingerprints.keys())))
+    out_dir = os.path.dirname(os.path.abspath(output_path))
+    if out_dir and not os.path.isdir(out_dir):
+        os.makedirs(out_dir)
+    with open(output_path, "w", encoding="utf-8") as f:
+        json.dump({"meta": meta, "languages": languages}, f,
+                  ensure_ascii=False, separators=(",", ":"))
+
+    size_mb = os.path.getsize(output_path) / (1024.0 * 1024.0)
+    print("Built fingerprints from %d lines -> %s (%.2f MB)"
+          % (lines, output_path, size_mb))
+    print("Languages: %s" % ", ".join(meta["languages"]))
+    for label in meta["languages"]:
+        print("  %-8s features=%d total=%d"
+              % (label, len(languages[label]["features"]), languages[label]["total"]))
+
+
+def parse_args(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--corpus",
+        default=os.path.join(_REPO_ROOT, "data_pack", "Genshin_AnimeGameData.jsonl"),
+        help="parallel multilingual JSONL corpus",
+    )
+    parser.add_argument(
+        "--out",
+        default=os.path.join(_REPO_ROOT, "charset_mnbvc", "data",
+                             "language_fingerprints.json"),
+        help="output fingerprint JSON path",
+    )
+    parser.add_argument("--max-lines", type=int, default=15000,
+                        help="maximum corpus lines to read (sampling)")
+    parser.add_argument("--top-k", type=int, default=10000,
+                        help="features kept per language")
+    parser.add_argument("--floor", type=float, default=1e-8,
+                        help="OOV probability floor for scoring")
+    parser.add_argument("--threshold", type=float, default=0.25,
+                        help="default posterior threshold for Unknown")
+    parser.add_argument("--margin", type=float, default=0.10,
+                        help="default best-vs-second margin for Unknown")
+    parser.add_argument("--min-script-ratio", type=float, default=0.05,
+                        help="minimum script share to activate a script family")
+    parser.add_argument("--no-prune", action="store_true",
+                        help="disable periodic singleton pruning")
+    return parser.parse_args(argv)
+
+
+def main(argv=None):
+    args = parse_args(argv)
+    build(
+        corpus_path=args.corpus,
+        output_path=args.out,
+        max_lines=args.max_lines,
+        top_k=args.top_k,
+        floor=args.floor,
+        threshold=args.threshold,
+        margin=args.margin,
+        min_script_ratio=args.min_script_ratio,
+        prune=not args.no_prune,
+    )
 
 
 if __name__ == "__main__":
-    build_fingerprints(
-        "/Users/alan/Downloads/Genshin_AnimeGameData.jsonl",
-        top_n=1000,
-        output_json="language_fingerprints.json"
-    )
+    main()
