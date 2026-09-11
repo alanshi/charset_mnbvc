@@ -1,0 +1,1 @@
+recursive-include charset_mnbvc/data *.json

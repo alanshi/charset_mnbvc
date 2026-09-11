@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "charset_mnbvc"
+dynamic = ["version"]
+description = "本项目旨在对大量文本文件进行快速编码检测以辅助 mnbvc 语料集项目的数据清洗工作"
+readme = "README.md"
+requires-python = ">=3.7"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [
+    { name = "Alan Shi", email = "alan.shi86@gmail.com" },
+]
+keywords = ["encoding", "charset", "detection", "mnbvc", "language-identification"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Topic :: Text Processing :: Linguistic",
+]
+dependencies = [
+    "faust-cchardet",
+    "tqdm",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7",
+]
+
+[project.urls]
+Homepage = "https://github.com/alanshi/charset_mnbvc"
+Source = "https://github.com/alanshi/charset_mnbvc/"
+"Bug Reports" = "https://github.com/alanshi/charset_mnbvc/issues"
+
+[tool.setuptools.packages.find]
+include = ["charset_mnbvc*"]
+
+[tool.setuptools.package-data]
+charset_mnbvc = ["data/*.json"]
+
+[tool.setuptools.dynamic]
+version = { attr = "charset_mnbvc.version.__version__" }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+norecursedirs = ["tests/fixtures"]
