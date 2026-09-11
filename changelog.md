@@ -1,4 +1,6 @@
 ## [Unreleased]
+
+## [0.0.19] - 2026-09-11
 ### Changed
 - 语言指纹检测重构为**基于语料词组**：新增共享分词器 `charset_mnbvc/langid_tokenizer.py`，
   采用「脚本门控 + presence 朴素贝叶斯」两阶段判别，输出 BCP-47 标签（zh-Hans/zh-Hant/ja/ko/...），
