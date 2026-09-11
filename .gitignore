@@ -6,6 +6,7 @@ venv
 .idea/
 charset_mnbvc.egg-info
 pypi_upload.sh
+scripts/publish.py
 tests/local/*
 __pycache__/
 .pytest_cache/
